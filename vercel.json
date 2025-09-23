@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "name": "yellow-ai-model-verification",
+  "builds": [
+    {
+      "src": "src/index.ts",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["public/**"]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/src/index.ts"
+    },
+    {
+      "src": "/health",
+      "dest": "/src/index.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "LOG_LEVEL": "info",
+    "PORT": "3000",
+    "HOST": "0.0.0.0",
+    "TARGET_NETWORK": "testnet",
+    "NETWORK_ID": "yellow-network-hackathon-2025",
+    "RPC_URL": "https://sepolia.base.org",
+    "CHAIN_ID": "84532",
+    "ETHEREUM_RPC_URL": "https://rpc.ankr.com/eth_sepolia", 
+    "ETHEREUM_CHAIN_ID": "11155111",
+    "CUSTODY_CONTRACT_ADDRESS": "0xDD70b689c19a992dd4D7C07582df63c7B46c8832",
+    "GUEST_CONTRACT_ADDRESS": "0xD5D5DC30AE7a6EEc268671f5eeB523A7C5C9EED4",
+    "ADJUDICATOR_CONTRACT_ADDRESS": "0x742d35cc8c4cc8e1c8cb1b33df5a9b3c2bdc4f2e",
+    "YELLOW_NETWORK_CHANNEL_ID": "0x37825bfb197fa307b6063e88e872efc6c1fed32dcbdb886ff584933bd05dfc9f",
+    "CROSS_CHAIN_ENABLED": "true",
+    "GASLESS_ENABLED": "true",
+    "DEMO_MODE": "false",
+    "MAX_VERIFICATION_LATENCY": "1000",
+    "MIN_THROUGHPUT": "100",
+    "SUB_SECOND_TARGET_MS": "500"
+  },
+  "functions": {
+    "src/index.ts": {
+      "maxDuration": 30
+    }
+  }
+}
