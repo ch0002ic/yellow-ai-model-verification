@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yellow Network - Real-Time AI Model Verification</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-areas: 
+                "header header header"
+                "channel channel channel"
+                "sidebar main metrics"
+                "sidebar controls live";
+            grid-template-columns: 300px 1fr 350px;
+            grid-template-rows: 80px 180px 1fr 350px;
+            gap: 20px;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .real-channel-info {
+            grid-area: channel;
+            background: rgba(255, 215, 0, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(255, 215, 0, 0.2);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            overflow-y: auto;
+            overflow-x: hidden;
+            max-height: 160px;
+            z-index: 1;
+            position: relative;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 215, 0, 0.6) transparent;
+        }
+
+        .real-channel-info::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .real-channel-info::-webkit-scrollbar-track {
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 3px;
+        }
+
+        .real-channel-info::-webkit-scrollbar-thumb {
+            background: rgba(255, 215, 0, 0.6);
+            border-radius: 3px;
+        }
+
+        .real-channel-info::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 215, 0, 0.8);
+        }
+
+        .channel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .channel-header h3 {
+            color: #ffd700;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .channel-status {
+            background: #22c55e;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        .channel-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .detail-item .label {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+        }
+
+        .detail-item .value {
+            font-size: 0.9rem;
+            color: #ffd700;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+
+        .test-btn {
+            background: linear-gradient(45deg, #22c55e, #16a34a);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-right: 8px;
+            margin-top: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+        }
+
+        .test-btn:active {
+            transform: translateY(0);
+        }
+
+        .header {
+            grid-area: header;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo i {
+            font-size: 2rem;
+            color: #ffd700;
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .network-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+
+        .sidebar h3 {
+            margin-bottom: 20px;
+            color: #ffd700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .network-chain {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            border-left: 4px solid #4ade80;
+        }
+
+        .chain-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .chain-stats {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .main-panel {
+            grid-area: main;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .main-panel h2 {
+            margin-bottom: 20px;
+            color: #ffd700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .verification-canvas {
+            width: 100%;
+            height: 400px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .verification-node {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #4ade80, #22d3ee);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(74, 222, 128, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .verification-node:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(74, 222, 128, 0.5);
+        }
+
+        .verification-link {
+            position: absolute;
+            height: 2px;
+            background: linear-gradient(90deg, #4ade80, #22d3ee);
+            opacity: 0.6;
+            animation: pulse 2s infinite;
+        }
+
+        /* Enhanced Analytics Section */
+        .analytics-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .analytics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .analytics-header h3 {
+            color: #ffd700;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .refresh-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #22d3ee;
+            font-size: 0.9rem;
+        }
+
+        #refreshIcon {
+            animation: spin 3s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .analytics-widget {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .analytics-widget:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 215, 0, 0.4);
+            box-shadow: 0 10px 30px rgba(255, 215, 0, 0.1);
+        }
+
+        .widget-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            color: #ffd700;
+            font-weight: 600;
+        }
+
+        .widget-footer {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.85rem;
+            margin-top: 15px;
+        }
+
+        /* Activity Chart */
+        .activity-chart {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            height: 120px;
+            padding: 10px 0;
+        }
+
+        .chart-bar {
+            background: linear-gradient(to top, #22d3ee, #4ade80);
+            width: 12%;
+            border-radius: 4px 4px 0 0;
+            animation: growUp 1.5s ease-out;
+        }
+
+        @keyframes growUp {
+            from { height: 0% !important; }
+            to { height: var(--target-height); }
+        }
+
+        /* Gas Optimization Ring */
+        .optimization-display {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .savings-ring {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .ring-progress {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: conic-gradient(#ffd700 0deg, #ffd700 264deg, rgba(255, 255, 255, 0.1) 264deg);
+            position: relative;
+        }
+
+        .ring-progress::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .ring-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .optimization-stats {
+            flex: 1;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            color: #4ade80;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8rem;
+        }
+
+        /* Cross-Chain Status */
+        .chain-status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .chain-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .chain-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4ade80;
+            animation: pulse 2s infinite;
+        }
+
+        .chain-dot.active {
+            background: #4ade80;
+            box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+        }
+
+        .chain-load {
+            margin-left: auto;
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        @keyframes flow {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+
+        .metrics-panel {
+            grid-area: metrics;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+
+        .metrics-panel h3 {
+            margin-bottom: 20px;
+            color: #ffd700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #22d3ee;
+            transition: all 0.3s ease;
+        }
+
+        .metric-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .metric-card.advanced-metric {
+            border-left: 4px solid #ffd700;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 255, 255, 0.05));
+        }
+
+        .metric-card.advanced-metric .metric-value {
+            color: #ffd700;
+        }
+
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #4ade80;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 5px;
+        }
+
+        .controls-panel {
+            grid-area: controls;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            z-index: 2;
+            position: relative;
+            overflow-y: auto;
+            max-height: 100%;
+        }
+
+        .controls-panel h3 {
+            margin-bottom: 20px;
+            color: #ffd700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .demo-button {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #4ade80, #22d3ee);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .demo-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(74, 222, 128, 0.3);
+        }
+
+        .demo-button:active {
+            transform: translateY(0);
+        }
+
+        .advanced-btn {
+            background: linear-gradient(45deg, #ffd700, #ff8c00) !important;
+            font-size: 0.85rem;
+            padding: 12px !important;
+        }
+
+        .advanced-btn:hover {
+            box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4) !important;
+        }
+
+        .live-panel {
+            grid-area: live;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            z-index: 2;
+            position: relative;
+        }
+
+        .live-panel h3 {
+            margin-bottom: 20px;
+            color: #ffd700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .verification-log {
+            height: 200px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 5px;
+            border-radius: 5px;
+            animation: fadeInUp 0.5s ease;
+        }
+
+        .log-success {
+            background: rgba(74, 222, 128, 0.1);
+            border-left: 3px solid #4ade80;
+        }
+
+        .log-info {
+            background: rgba(34, 211, 238, 0.1);
+            border-left: 3px solid #22d3ee;
+        }
+
+        .log-warning {
+            background: rgba(251, 191, 36, 0.1);
+            border-left: 3px solid #fbbf24;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .tooltip.show {
+            opacity: 1;
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard {
+                grid-template-areas: 
+                    "header header"
+                    "sidebar main"
+                    "metrics metrics"
+                    "controls live";
+                grid-template-columns: 300px 1fr;
+                grid-template-rows: 80px 1fr 300px 300px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-areas: 
+                    "header"
+                    "sidebar"
+                    "main"
+                    "metrics"
+                    "controls"
+                    "live";
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+                padding: 10px;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-network-wired"></i>
+                <h1>Yellow Network AI Verification</h1>
+            </div>
+            <div class="network-status">
+                <div class="status-dot"></div>
+                <span>Network Active</span>
+                <span id="networkLatency">~120ms</span>
+            </div>
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h3><i class="fas fa-link"></i> Cross-Chain Networks</h3>
+            <div class="network-chain">
+                <div class="chain-name">Ethereum Mainnet</div>
+                <div class="chain-stats">Block: <span id="ethBlock">18,500,123</span> | Gas: <span id="ethGas">25 gwei</span></div>
+            </div>
+            <div class="network-chain">
+                <div class="chain-name">Polygon Network</div>
+                <div class="chain-stats">Block: <span id="polyBlock">48,200,456</span> | Gas: <span id="polyGas">30 gwei</span></div>
+            </div>
+            <div class="network-chain">
+                <div class="chain-name">Arbitrum One</div>
+                <div class="chain-stats">Block: <span id="arbBlock">145,300,789</span> | Gas: <span id="arbGas">0.1 gwei</span></div>
+            </div>
+            <div class="network-chain">
+                <div class="chain-name">Yellow Network</div>
+                <div class="chain-stats">Channels: <span id="yellowChannels">1,247</span> | Active: <span id="yellowActive">89</span></div>
+            </div>
+        </aside>
+
+        <!-- Main Panel -->
+        <main class="main-panel">
+            <h2><i class="fas fa-brain"></i> AI Model Verification Network</h2>
+            <div class="verification-canvas" id="verificationCanvas">
+                <!-- Dynamic verification nodes will be inserted here -->
+            </div>
+            
+            <!-- Enhanced Analytics Section -->
+            <div class="analytics-section">
+                <div class="analytics-header">
+                    <h3><i class="fas fa-chart-bar"></i> Yellow Network Analytics</h3>
+                    <div class="refresh-indicator">
+                        <i class="fas fa-sync-alt" id="refreshIcon"></i>
+                        <span>Live Data</span>
+                    </div>
+                </div>
+                
+                <div class="analytics-grid">
+                    <div class="analytics-widget">
+                        <div class="widget-header">
+                            <i class="fas fa-network-wired"></i>
+                            <span>Network Activity</span>
+                        </div>
+                        <div class="activity-chart" id="activityChart">
+                            <div class="chart-bar" style="height: 60%"></div>
+                            <div class="chart-bar" style="height: 80%"></div>
+                            <div class="chart-bar" style="height: 45%"></div>
+                            <div class="chart-bar" style="height: 90%"></div>
+                            <div class="chart-bar" style="height: 75%"></div>
+                            <div class="chart-bar" style="height: 95%"></div>
+                            <div class="chart-bar" style="height: 70%"></div>
+                            <div class="chart-bar" style="height: 85%"></div>
+                        </div>
+                        <div class="widget-footer">Verification Volume (24h)</div>
+                    </div>
+                    
+                    <div class="analytics-widget">
+                        <div class="widget-header">
+                            <i class="fas fa-coins"></i>
+                            <span>Gas Optimization</span>
+                        </div>
+                        <div class="optimization-display">
+                            <div class="savings-ring">
+                                <div class="ring-progress" data-progress="73"></div>
+                                <div class="ring-text">73.5%</div>
+                            </div>
+                            <div class="optimization-stats">
+                                <div class="stat-item">
+                                    <span class="stat-value">$847K</span>
+                                    <span class="stat-label">Saved Today</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value">2.1M</span>
+                                    <span class="stat-label">Tx Processed</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="widget-footer">Average Gas Savings</div>
+                    </div>
+                    
+                    <div class="analytics-widget">
+                        <div class="widget-header">
+                            <i class="fas fa-globe"></i>
+                            <span>Cross-Chain Status</span>
+                        </div>
+                        <div class="chain-status-grid">
+                            <div class="chain-item">
+                                <div class="chain-dot active"></div>
+                                <span>Ethereum</span>
+                                <span class="chain-load">847</span>
+                            </div>
+                            <div class="chain-item">
+                                <div class="chain-dot active"></div>
+                                <span>Base</span>
+                                <span class="chain-load">623</span>
+                            </div>
+                            <div class="chain-item">
+                                <div class="chain-dot active"></div>
+                                <span>Polygon</span>
+                                <span class="chain-load">534</span>
+                            </div>
+                            <div class="chain-item">
+                                <div class="chain-dot active"></div>
+                                <span>Arbitrum</span>
+                                <span class="chain-load">392</span>
+                            </div>
+                        </div>
+                        <div class="widget-footer">Active Channels per Chain</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Metrics Panel -->
+        <section class="metrics-panel">
+            <h3><i class="fas fa-chart-line"></i> Live Metrics</h3>
+            <div class="metric-card">
+                <div class="metric-value" id="totalVerifications">1,247</div>
+                <div class="metric-label">Total Verifications</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="averageLatency">89ms</div>
+                <div class="metric-label">Average Latency</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="gasSavings">$2,456</div>
+                <div class="metric-label">Gas Savings (24h)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="activeChannels">42</div>
+                <div class="metric-label">Active State Channels</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="successRate">99.7%</div>
+                <div class="metric-label">Success Rate</div>
+            </div>
+            
+            <!-- Advanced Yellow Network Metrics -->
+            <div class="metric-card advanced-metric">
+                <div class="metric-value" id="yellowNetworkTVL">$15.4M</div>
+                <div class="metric-label">Yellow Network TVL</div>
+            </div>
+            <div class="metric-card advanced-metric">
+                <div class="metric-value" id="crossChainVolume">2,853</div>
+                <div class="metric-label">Cross-Chain Channels</div>
+            </div>
+            <div class="metric-card advanced-metric">
+                <div class="metric-value" id="ecosystemNodes">847</div>
+                <div class="metric-label">Ecosystem Nodes</div>
+            </div>
+        </section>
+
+        <!-- Controls Panel -->
+        <section class="controls-panel">
+            <h3><i class="fas fa-gamepad"></i> Demo Controls</h3>
+            
+            <button class="demo-button" onclick="window.simulateVerification()">
+                <i class="fas fa-play"></i>
+                Start AI Verification
+            </button>
+            <button class="demo-button" onclick="window.simulateGaslessProof()">
+                <i class="fas fa-gas-pump"></i>
+                Generate Gasless Proof
+            </button>
+            <button class="demo-button" onclick="window.simulateCrossChain()">
+                <i class="fas fa-exchange-alt"></i>
+                Cross-Chain Verification
+            </button>
+            <button class="demo-button" onclick="window.showStateChannels()">
+                <i class="fas fa-route"></i>
+                View State Channels
+            </button>
+            <button class="demo-button" onclick="window.resetDemo()">
+                <i class="fas fa-refresh"></i>
+                Reset Demo
+            </button>
+            
+            <h4 style="color: #ffd700; margin: 20px 0 10px 0; font-size: 0.9rem;">🌟 Advanced Features</h4>
+            
+            <button class="demo-button advanced-btn" onclick="window.createMultiPartyChannel()">
+                <i class="fas fa-users"></i>
+                Multi-Party Channel
+            </button>
+            <button class="demo-button advanced-btn" onclick="window.showEcosystemData()">
+                <i class="fas fa-globe"></i>
+                Ecosystem Analytics
+            </button>
+        </section>
+
+        <!-- Live Panel -->
+        <section class="live-panel">
+            <h3><i class="fas fa-terminal"></i> Live Verification Log</h3>
+            <div class="verification-log" id="verificationLog">
+                <div class="log-entry log-success">✓ Model verification completed in 67ms</div>
+                <div class="log-entry log-info">ℹ Cross-chain proof generated for Polygon</div>
+                <div class="log-entry log-success">✓ Gasless transaction confirmed</div>
+                <div class="log-entry log-info">ℹ State channel updated with new verification</div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip"></div>
+
+</body>
+    <script src="assets/dashboard.js"></script>
+</body>
+</html>
