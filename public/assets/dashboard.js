@@ -342,7 +342,25 @@ class YellowNetworkDashboard {
         this.logEntries = [];
         this.liveTransactions = [];
         
-        this.apiBaseUrl = 'http://localhost:3000';
+        // Environment-aware configuration
+        this.isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        
+        if (this.isLocalhost) {
+            this.apiBaseUrl = 'http://localhost:3000';
+            this.wsUrl = 'ws://localhost:3000';
+        } else {
+            // Production Vercel deployment
+            this.apiBaseUrl = window.location.origin;
+            this.wsUrl = `wss://${window.location.host}`;
+        }
+        
+        console.log('🌐 Environment detected:', {
+            isLocalhost: this.isLocalhost,
+            apiBaseUrl: this.apiBaseUrl,
+            wsUrl: this.wsUrl,
+            origin: window.location.origin
+        });
+        
         this.wsConnection = null;
         
         this.init();
@@ -934,12 +952,20 @@ class YellowNetworkDashboard {
     }
 
     setupWebSocket() {
-        // Try to connect to our WebSocket server
+        // WebSocket is not supported on Vercel serverless functions
+        if (!this.isLocalhost) {
+            console.log('ℹ️ WebSocket disabled on serverless deployment (using simulation mode)');
+            this.addLogEntry('ℹ Using simulation mode (serverless environment)', 'info');
+            return;
+        }
+        
+        // Try to connect to our WebSocket server (localhost only)
         try {
-            this.wsConnection = new WebSocket('ws://localhost:3000');
+            console.log('🔌 Attempting WebSocket connection to:', this.wsUrl);
+            this.wsConnection = new WebSocket(this.wsUrl);
             
             this.wsConnection.onopen = () => {
-                console.log('✅ WebSocket connected');
+                console.log('✅ WebSocket connected to:', this.wsUrl);
                 this.addLogEntry('✓ WebSocket connection established', 'success');
             };
 
