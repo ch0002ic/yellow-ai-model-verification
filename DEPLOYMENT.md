@@ -14,6 +14,8 @@
 
 Configure these environment variables in Vercel Dashboard:
 
+> **🔐 Security Note**: Replace the placeholder values below with your real credentials before deployment.
+
 ```bash
 # Core Configuration
 NODE_ENV=production
@@ -49,27 +51,94 @@ MAX_VERIFICATION_LATENCY=1000
 MIN_THROUGHPUT=100
 SUB_SECOND_TARGET_MS=500
 
-# Security (use your own private key for production)
-PRIVATE_KEY=0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-VERIFICATION_SIGNATURE_KEY=hackathon_2025_verification_key
+# Security - IMPORTANT: Replace with your real values
+# PRIVATE_KEY: Export from MetaMask (Account Details > Export Private Key)
+# For hackathon: Use a dedicated test wallet with Base Sepolia ETH
+PRIVATE_KEY=0x[YOUR_REAL_PRIVATE_KEY_HERE]
+
+# VERIFICATION_SIGNATURE_KEY: Generate a secure random string for your app
+# Example: yellow_hackathon_2025_[your_team_name]_[random_string]
+VERIFICATION_SIGNATURE_KEY=yellow_hackathon_2025_hashbill_team_singapore
 
 # Rate Limiting
 API_RATE_LIMIT_REQUESTS=1000
 API_RATE_LIMIT_WINDOW_MS=900000
 ```
 
+### 🔐 How to Get Real Security Values
+
+**Before deploying, you MUST replace the placeholder security values:**
+
+#### 1. **PRIVATE_KEY** - Your Wallet Private Key
+
+**Recommended for Hackathon**: Use a dedicated test wallet
+
+```bash
+# Method 1: Create New MetaMask Account (Safest)
+# 1. Add new account in MetaMask
+# 2. Fund with Base Sepolia ETH from faucet: https://www.alchemy.com/faucets/base-sepolia
+# 3. Export private key: Account Details > Export Private Key
+# 4. Copy the private key (64 characters after 0x)
+
+# Method 2: Use Existing MetaMask Account  
+# 1. Go to MetaMask > Account Details
+# 2. Click "Export Private Key"
+# 3. Enter MetaMask password
+# 4. Copy the private key
+
+# Format: 0x followed by 64 hex characters
+PRIVATE_KEY=0xa1b2c3d4e5f6789012345678901234567890123456789012345678901234567890
+```
+
+#### 2. **VERIFICATION_SIGNATURE_KEY** - Custom App Secret
+
+```bash
+# Generate a unique key for your hackathon submission
+# Use your team name + random string for uniqueness
+
+# Example formats:
+VERIFICATION_SIGNATURE_KEY=yellow_hackathon_2025_hashbill_team_singapore_$(date +%s)
+VERIFICATION_SIGNATURE_KEY=yellow_hackathon_2025_your_team_name_your_random_string
+
+# Or generate cryptographically secure:
+# openssl rand -hex 32
+```
+
+#### 3. **Required Testnet Setup**
+
+Your wallet needs Base Sepolia testnet ETH:
+- **Faucet**: https://www.alchemy.com/faucets/base-sepolia  
+- **Network**: Base Sepolia (Chain ID: 84532)
+- **RPC**: https://sepolia.base.org
+- **Amount Needed**: ~0.1 ETH for testing
+
+#### 🛡️ Security Checklist for Hackathon
+
+- ✅ **Use dedicated test wallet** (not your main wallet)
+- ✅ **Only use Base Sepolia testnet** (never mainnet for hackathon)
+- ✅ **Fund wallet with testnet ETH** from official faucets
+- ✅ **Never commit private keys** to git (already in .gitignore)
+- ✅ **Use environment variables** in Vercel for all secrets
+- ✅ **Generate unique signature key** for your team
+
 ### 📦 Deployment Steps
 
 1. **Connect GitHub Repository**:
    - Repository: `https://github.com/ch0002ic/yellow-ai-model-verification`
    - Branch: `main`
-   - Root Directory: `/` (use the entire repository)
+   - Root Directory: `./` (keep as default)
 
 2. **Configure Build Settings**:
-   - Framework Preset: `Other`
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
-   - Install Command: `npm install`
+   - Framework Preset: **`Other`** (correct for Node.js Express applications)
+   - Build Command: `npm run build` (change from the default if needed)
+   - Output Directory: `dist` (replace the default "public" setting)
+   - Install Command: `npm install` (keep default)
+   - Root Directory: `./` (leave as default)
+
+3. **Important Build Configuration Notes**:
+   - Change **Build Command** from `npm run vercel-build` to `npm run build`
+   - Change **Output Directory** from `public` to `dist`
+   - Keep **Install Command** as `npm install`
 
 3. **Set Environment Variables**:
    - Copy the environment variables above into Vercel Dashboard

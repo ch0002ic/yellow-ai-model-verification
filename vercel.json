@@ -45,10 +45,5 @@
     "MAX_VERIFICATION_LATENCY": "1000",
     "MIN_THROUGHPUT": "100",
     "SUB_SECOND_TARGET_MS": "500"
-  },
-  "functions": {
-    "src/index.ts": {
-      "maxDuration": 30
-    }
   }
 }
