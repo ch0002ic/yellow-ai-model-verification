@@ -1,5 +1,6 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
+import path from 'path';
 import { createServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { logger } from '../utils/logger';
@@ -44,8 +45,14 @@ export class HttpServer {
     this.app.post('/api/gasless-proof', this.handleGaslessProof.bind(this));
     this.app.post('/api/cross-chain-verify', this.handleCrossChainVerify.bind(this));
     
+    // Serve the main dashboard at root
     this.app.get('/', (req: Request, res: Response) => {
-      res.sendFile('index.html', { root: 'public' });
+      res.sendFile(path.join(__dirname, '../../public/index.html'));
+    });
+    
+    // Catch-all route for any unmatched requests
+    this.app.get('*', (req: Request, res: Response) => {
+      res.sendFile(path.join(__dirname, '../../public/index.html'));
     });
   }
 
