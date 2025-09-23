@@ -6,7 +6,7 @@
     "PORT": "3000",
     "HOST": "0.0.0.0",
     "TARGET_NETWORK": "testnet",
-    "NETWORK_ID": "yellow-network-hackathon-2025",
+    "NETWORK_ID": "yellow-network-ideathon-2025",
     "RPC_URL": "https://sepolia.base.org",
     "CHAIN_ID": "84532",
     "ETHEREUM_RPC_URL": "https://rpc.ankr.com/eth_sepolia", 

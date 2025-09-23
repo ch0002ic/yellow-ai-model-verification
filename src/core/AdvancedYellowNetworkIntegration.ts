@@ -1,6 +1,6 @@
 /**
  * Advanced Yellow Network Integration
- * Enhanced ERC-7824 features for hackathon showcase
+ * Enhanced ERC-7824 features for ideathon showcase
  * PRODUCTION READY: Multi-party channels, advanced state proofs, ecosystem integration
  */
 
@@ -174,7 +174,7 @@ export class AdvancedYellowNetworkIntegration {
 
     try {
       // In a real implementation, this would call Yellow Network APIs
-      // For hackathon demo, we'll simulate realistic data based on time
+      // For ideathon demo, we'll simulate realistic data based on time
       const baseTime = Date.now();
       const timeVariation = Math.sin(baseTime / 300000) * 0.1; // 5-minute cycles
 

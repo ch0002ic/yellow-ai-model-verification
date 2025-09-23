@@ -1,4 +1,4 @@
-# 🌟 Yellow Network Hackathon 2025 - Real-Time AI Verification Network
+# 🌟 Yellow Network Ideathon 2025 - Real-Time AI Verification Network
 
 [![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Yellow Network](https://img.shields.io/badge/Yellow%20Network-ERC--7824-yellow.svg)](https://yellow.org)
@@ -7,7 +7,7 @@
 
 ## 🚀 Overview
 
-**Real-Time AI Model Verification Network** is a cutting-edge decentralized application built for the **Yellow Network Hackathon 2025**. It leverages the power of **ERC-7824 state channels** and the **Nitrolite SDK** to provide sub-second AI model verification across multiple blockchains with gasless transactions.
+**Real-Time AI Model Verification Network** is a cutting-edge decentralized application built for the **Yellow Network Ideathon 2025**. It leverages the power of **ERC-7824 state channels** and the **Nitrolite SDK** to provide sub-second AI model verification across multiple blockchains with gasless transactions.
 
 ### 🎯 Key Features
 
@@ -210,7 +210,7 @@ npm run test:integration
 - **Arbitrum Goerli** (Chain ID: 421613)
 - **Optimism Goerli** (Chain ID: 420)
 
-## 🎯 Hackathon Highlights
+## 🎯 Ideathon Highlights
 
 ### 🏆 Innovation Achievements
 
@@ -261,22 +261,22 @@ curl http://localhost:3000/health
 
 ## 📄 License
 
-MIT License - Built for Yellow Network Hackathon 2025
+MIT License - Built for Yellow Network Ideathon 2025
 
 ## 🙏 Acknowledgments
 
 - **Yellow Network** for the innovative ERC-7824 standard and Nitrolite SDK
 - **Base Network** for reliable testnet infrastructure
-- **Hackathon Organizers** for the opportunity to build the future of AI verification
+- **Ideathon Organizers** for the opportunity to build the future of AI verification
 
 ---
 
 <div align="center">
 
-**🌟 Built for Yellow Network Hackathon 2025 🌟**
+**🌟 Built for Yellow Network Ideathon 2025 🌟**
 
 [Live Demo](http://localhost:3000) • [GitHub](https://github.com/ch0002ic/yellow-ai-model-verification) • [API Docs](http://localhost:3000/health)
 
-**Team**: HashBill | **Event**: Yellow Network Hackathon Singapore | **Date**: September 2025
+**Team**: HashBill | **Event**: Yellow Network Ideathon Singapore | **Date**: September 2025
 
 </div>

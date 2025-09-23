@@ -2,7 +2,7 @@
  * REAL Nitrolite SDK Integration - Using actual @erc7824/nitrolite
  * EVOLUTIONARY PATTERN: Authentic SDK usage with comprehensive error handling
  * YELLOW NETWORK INTEGRATION: Real @erc7824/nitrolite SDK implementation
- * ENHANCED: Advanced ERC-7824 features for Yellow Network Hackathon showcase
+ * ENHANCED: Advanced ERC-7824 features for Yellow Network Ideathon showcase
  */
 
 import { 
@@ -211,11 +211,11 @@ export class RealNitroliteSDKWrapper {
         .map(([name]) => name);
 
       if (missingContracts.length > 0) {
-        logger.info('ℹ️ Using demo mode for Yellow Network Hackathon 2025', {
+        logger.info('ℹ️ Using demo mode for Yellow Network Ideathon 2025', {
           demoMode: true,
           missingContracts,
           note: 'For production deployment, configure real Yellow Network contract addresses in .env',
-          impact: 'SDK running in demo mode - all functionality available for hackathon demonstration'
+          impact: 'SDK running in demo mode - all functionality available for ideathon demonstration'
         });
       }
 
@@ -296,7 +296,7 @@ export class RealNitroliteSDKWrapper {
       });
       
       // Continue with Yellow Network demonstration in compatibility mode
-      logger.warn('⚠️ Continuing in compatibility mode for hackathon demo', {
+      logger.warn('⚠️ Continuing in compatibility mode for ideathon demo', {
         impact: 'Contract addresses not configured - using environment defaults',
         recommendation: 'Configure CUSTODY_CONTRACT_ADDRESS, GUEST_CONTRACT_ADDRESS, and ADJUDICATOR_CONTRACT_ADDRESS for full Yellow Network integration'
       });
@@ -332,11 +332,11 @@ export class RealNitroliteSDKWrapper {
         recommendation = 'Verify contract addresses are actual deployed Yellow Network contracts on Base mainnet';
       }
       
-      logger.info('ℹ️ Health check using demo mode for Yellow Network Hackathon 2025', { 
+      logger.info('ℹ️ Health check using demo mode for Yellow Network Ideathon 2025', { 
         demoMode: true,
         error: errorMessage,
         errorType: isNetworkError ? 'network' : isContractError ? 'contract' : 'unknown',
-        hackathonNote: 'Demo mode active - all features available for demonstration',
+        ideathonNote: 'Demo mode active - all features available for demonstration',
         solution: 'For production: configure real Yellow Network contract addresses in .env',
         rpcUrl: this.config.rpcUrl?.substring(0, 50) + '...',
         chainId: this.config.chainId

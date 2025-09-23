@@ -56,7 +56,7 @@ interface StateChannel {
 
 /**
  * Enhanced State Channel Manager using REAL Nitrolite SDK
- * PRODUCTION READY: Professional @erc7824/nitrolite integration for Yellow Network hackathon
+ * PRODUCTION READY: Professional @erc7824/nitrolite integration for Yellow Network ideathon
  */
 export class StateChannelManager {
   private realSDK: RealNitroliteSDKWrapper | null = null;
@@ -93,7 +93,7 @@ export class StateChannelManager {
         
         // Get diagnostic information to help users fix the configuration
         const status = this.realSDK.getConnectionStatus();
-        logger.warn('⚠️ SDK initialized but not fully connected - compatibility mode for hackathon demo', {
+        logger.warn('⚠️ SDK initialized but not fully connected - compatibility mode for ideathon demo', {
           mode: status.mode,
           diagnostics: status.diagnostics,
           suggestions: status.suggestions
@@ -109,7 +109,7 @@ export class StateChannelManager {
       
     } catch (error) {
       this.connectionMode = 'compatibility';
-      logger.error('❌ Failed to initialize real SDK, operating in compatibility mode for hackathon demo', {
+      logger.error('❌ Failed to initialize real SDK, operating in compatibility mode for ideathon demo', {
         error: error instanceof Error ? error.message : String(error),
         note: 'Core verification network functionality will still work'
       });

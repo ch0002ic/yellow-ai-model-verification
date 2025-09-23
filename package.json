@@ -14,7 +14,7 @@
     "clean": "rm -rf dist",
     "health": "curl -f http://localhost:3000/health",
     "type-check": "tsc --noEmit",
-    "hackathon:demo": "npm run build && TARGET_NETWORK=testnet npm start"
+    "ideathon:demo": "npm run build && TARGET_NETWORK=testnet npm start"
   },
   "keywords": [
     "ai-verification",
@@ -25,7 +25,7 @@
     "real-time",
     "gasless"
   ],
-  "author": "Yellow Network Hackathon Team",
+  "author": "Yellow Network Ideathon Team",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.0.0",

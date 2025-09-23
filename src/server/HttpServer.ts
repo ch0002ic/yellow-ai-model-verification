@@ -125,7 +125,7 @@ export class HttpServer {
   }
 
   /**
-   * Yellow Network Hackathon Demo: Gasless Proof Generation
+   * Yellow Network Ideathon Demo: Gasless Proof Generation
    */
   private async handleGaslessProof(req: Request, res: Response): Promise<void> {
     try {
@@ -186,7 +186,7 @@ export class HttpServer {
   }
 
   /**
-   * Yellow Network Hackathon Demo: Cross-Chain Verification
+   * Yellow Network Ideathon Demo: Cross-Chain Verification
    */
   private async handleCrossChainVerify(req: Request, res: Response): Promise<void> {
     try {

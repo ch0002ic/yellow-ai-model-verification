@@ -156,7 +156,7 @@ export function validateEnvironment(): EnvironmentValidationResult {
   if (!process.env.CUSTODY_CONTRACT_ADDRESS || !process.env.GUEST_CONTRACT_ADDRESS || !process.env.ADJUDICATOR_CONTRACT_ADDRESS) {
     warnings.push({
       variable: 'CONTRACT_ADDRESSES',
-      issue: 'Nitrolite SDK contract addresses not configured - SDK will operate in compatibility mode for hackathon demo',
+      issue: 'Nitrolite SDK contract addresses not configured - SDK will operate in compatibility mode for ideathon demo',
       severity: 'warning'
     });
   }

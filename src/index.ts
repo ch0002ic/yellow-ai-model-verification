@@ -1,5 +1,5 @@
 /**
- * Main entry point for Yellow Network Hackathon Demo
+ * Main entry point for Yellow Network Ideathon Demo
  * Real-Time AI Model Verification using Nitrolite SDK and State Channels
  * 
  * FOCUS: Yellow Network integration with Base Sepolia testnet
