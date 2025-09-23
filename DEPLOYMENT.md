@@ -54,7 +54,7 @@ SUB_SECOND_TARGET_MS=500
 # Security - IMPORTANT: Replace with your real values
 # PRIVATE_KEY: Export from MetaMask (Account Details > Export Private Key)
 # For hackathon: Use a dedicated test wallet with Base Sepolia ETH
-PRIVATE_KEY=0x[YOUR_REAL_PRIVATE_KEY_HERE]
+PRIVATE_KEY=0xD5D5DC30AE7a6EEc268671f5eeB523A7C5C9EED4
 
 # VERIFICATION_SIGNATURE_KEY: Generate a secure random string for your app
 # Example: yellow_hackathon_2025_[your_team_name]_[random_string]
@@ -130,15 +130,16 @@ Your wallet needs Base Sepolia testnet ETH:
 
 2. **Configure Build Settings**:
    - Framework Preset: **`Other`** (correct for Node.js Express applications)
-   - Build Command: `npm run build` (change from the default if needed)
+   - Build Command: `npm run build`
    - Output Directory: `dist` (replace the default "public" setting)
    - Install Command: `npm install` (keep default)
    - Root Directory: `./` (leave as default)
 
 3. **Important Build Configuration Notes**:
-   - Change **Build Command** from `npm run vercel-build` to `npm run build`
-   - Change **Output Directory** from `public` to `dist`
-   - Keep **Install Command** as `npm install`
+   - **Build Command**: Set to `npm run build` (compiles TypeScript)
+   - **Output Directory**: Set to `dist` (where compiled JS files go)
+   - **Install Command**: Keep as `npm install`
+   - **Framework Preset**: Use `Other` for Express.js apps
 
 3. **Set Environment Variables**:
    - Copy the environment variables above into Vercel Dashboard
