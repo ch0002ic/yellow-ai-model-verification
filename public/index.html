@@ -21,30 +21,62 @@
         <form id="verification-form" class="form-grid">
           <label>
             <span>Model ID</span>
-            <input type="text" name="modelId" required placeholder="model-abc" />
+            <input
+              type="text"
+              name="modelId"
+              required
+              placeholder="model-abc"
+              value="clip-vit-base-32"
+            />
           </label>
           <label>
             <span>Verifier ID</span>
-            <input type="text" name="verifierId" required placeholder="verifier-123" />
+            <input
+              type="text"
+              name="verifierId"
+              required
+              placeholder="verifier-123"
+              value="yellow-clearnode-auditor"
+            />
           </label>
           <label>
             <span>Input Hash</span>
-            <input type="text" name="inputHash" required placeholder="0x..." />
+            <input
+              type="text"
+              name="inputHash"
+              required
+              placeholder="0x..."
+              value="0x6d44c1f4b902a0bc13a7492abfde3abdf375d2a5c5e5f4a5f0a19c3f93c7d4b2"
+            />
           </label>
           <label>
             <span>Output Hash</span>
-            <input type="text" name="outputHash" required placeholder="0x..." />
+            <input
+              type="text"
+              name="outputHash"
+              required
+              placeholder="0x..."
+              value="0x3117ab2f4b1f7c5bc107f6ea93c590f705c52db6bfa8f74d74b789b520ffe21d"
+            />
           </label>
           <label>
             <span>Latency (ms)</span>
-            <input type="number" name="latencyMs" min="0" step="1" required value="42" />
+            <input
+              type="number"
+              name="latencyMs"
+              min="0"
+              step="1"
+              required
+              value="420"
+            />
           </label>
           <label>
             <span>Metadata (JSON)</span>
-            <textarea name="metadata" rows="3" placeholder='{"dataset":"imagenet"}'></textarea>
+            <textarea name="metadata" rows="3" placeholder='{"dataset":"imagenet"}'>{"dataset":"imagenet","modelVersion":"v2.1","notes":"demo submission"}</textarea>
           </label>
           <button type="submit" class="primary">Create Verification</button>
         </form>
+        <p class="form-hint">Use the pre-filled sample values or customise them before submitting.</p>
         <div class="feedback" id="form-feedback"></div>
       </section>
 
@@ -70,6 +102,87 @@
           </div>
         </div>
         <div class="event-log" id="event-log"></div>
+      </section>
+
+      <section class="panel panel-telemetry">
+        <h2>Telemetry &amp; Automation</h2>
+
+        <div class="metric-cluster">
+          <h3>Channel activity</h3>
+          <div class="metrics metrics-compact">
+            <div class="metric">
+              <span class="metric-label">Total events</span>
+              <span class="metric-value" id="telemetry-channel-total">0</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Active channels</span>
+              <span class="metric-value" id="telemetry-channel-snapshot">0</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Last event</span>
+              <span class="metric-value metric-value-sm" id="telemetry-channel-last">–</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="metric-cluster">
+          <h3>Verification lifecycle</h3>
+          <div class="metrics metrics-compact">
+            <div class="metric">
+              <span class="metric-label">Active</span>
+              <span class="metric-value" id="telemetry-verifications-active">0</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Resolved</span>
+              <span class="metric-value" id="telemetry-verifications-resolved">0</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Verified ✓</span>
+              <span class="metric-value" id="telemetry-verifications-verified">0</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Failed ✕</span>
+              <span class="metric-value" id="telemetry-verifications-failed">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="metric-cluster">
+          <h3>Automation</h3>
+          <div class="metrics metrics-compact">
+            <div class="metric">
+              <span class="metric-label">Triggered</span>
+              <span class="metric-value" id="telemetry-automation-triggered">0</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Pending</span>
+              <span class="metric-value" id="telemetry-automation-pending">0</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Completed</span>
+              <span class="metric-value" id="telemetry-automation-completed">0</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Failed</span>
+              <span class="metric-value" id="telemetry-automation-failed">0</span>
+            </div>
+            <div class="metric">
+              <span class="metric-label">Avg processing</span>
+              <span class="metric-value metric-value-sm" id="telemetry-automation-avg">–</span>
+            </div>
+          </div>
+        </div>
+
+        <footer class="telemetry-footer">
+          <div>
+            <span class="footer-label">Booted</span>
+            <span id="telemetry-booted">–</span>
+          </div>
+          <div>
+            <span class="footer-label">Last update</span>
+            <span id="telemetry-generated">–</span>
+          </div>
+        </footer>
       </section>
 
       <section class="panel panel-timeline">

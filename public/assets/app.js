@@ -10,6 +10,27 @@ const eventLog = document.getElementById("event-log");
 const channelTimelineSelect = document.getElementById("channel-timeline-select");
 const channelTimelineRefresh = document.getElementById("channel-timeline-refresh");
 const channelTimeline = document.getElementById("channel-timeline");
+const telemetryBooted = document.getElementById("telemetry-booted");
+const telemetryGenerated = document.getElementById("telemetry-generated");
+const telemetryElements = {
+  channelTotal: document.getElementById("telemetry-channel-total"),
+  channelSnapshot: document.getElementById("telemetry-channel-snapshot"),
+  channelLastEvent: document.getElementById("telemetry-channel-last"),
+  verificationsActive: document.getElementById("telemetry-verifications-active"),
+  verificationsResolved: document.getElementById("telemetry-verifications-resolved"),
+  verificationsVerified: document.getElementById("telemetry-verifications-verified"),
+  verificationsFailed: document.getElementById("telemetry-verifications-failed"),
+  automationTriggered: document.getElementById("telemetry-automation-triggered"),
+  automationPending: document.getElementById("telemetry-automation-pending"),
+  automationCompleted: document.getElementById("telemetry-automation-completed"),
+  automationFailed: document.getElementById("telemetry-automation-failed"),
+  automationAverage: document.getElementById("telemetry-automation-avg"),
+};
+const telemetryEnabled =
+  telemetryBooted instanceof HTMLElement &&
+  telemetryGenerated instanceof HTMLElement &&
+  Object.values(telemetryElements).some((element) => element instanceof HTMLElement);
+const numberFormatter = new Intl.NumberFormat("en-US");
 
 const REFRESH_INTERVAL_MS = 7500;
 const MAX_EVENT_ENTRIES = 24;
@@ -73,6 +94,159 @@ function formatDate(value) {
   return date.toLocaleString();
 }
 
+function formatRelativeTime(value) {
+  if (!value) {
+    return "–";
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "–";
+  }
+
+  const diffMs = Date.now() - date.getTime();
+  const tense = diffMs >= 0 ? "ago" : "from now";
+  const seconds = Math.round(Math.abs(diffMs) / 1000);
+
+  if (seconds < 5) {
+    return "just now";
+  }
+  if (seconds < 60) {
+    return `${seconds}s ${tense}`;
+  }
+
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) {
+    return `${minutes}m ${tense}`;
+  }
+
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) {
+    return `${hours}h ${tense}`;
+  }
+
+  const days = Math.round(hours / 24);
+  if (days < 7) {
+    return `${days}d ${tense}`;
+  }
+
+  const weeks = Math.round(days / 7);
+  if (weeks < 52) {
+    return `${weeks}w ${tense}`;
+  }
+
+  const years = Math.round(days / 365);
+  return `${years}y ${tense}`;
+}
+
+function formatDurationFromMs(value) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    return "–";
+  }
+
+  if (value < 1000) {
+    return `${Math.round(value)} ms`;
+  }
+  if (value < 60_000) {
+    return `${(value / 1000).toFixed(1)} s`;
+  }
+  if (value < 3_600_000) {
+    return `${(value / 60_000).toFixed(1)} min`;
+  }
+
+  return `${(value / 3_600_000).toFixed(1)} h`;
+}
+
+function setNumberMetric(element, value) {
+  if (!(element instanceof HTMLElement)) {
+    return;
+  }
+
+  const numeric = typeof value === "bigint" ? Number(value) : Number(value ?? 0);
+  element.textContent = Number.isFinite(numeric) ? numberFormatter.format(numeric) : "0";
+}
+
+function setRelativeMetric(element, value) {
+  if (!(element instanceof HTMLElement)) {
+    return;
+  }
+
+  if (!value) {
+    element.textContent = "–";
+    element.removeAttribute("title");
+    return;
+  }
+
+  const relative = formatRelativeTime(value);
+  element.textContent = relative;
+  element.title = formatDate(value);
+}
+
+function setDurationMetric(element, value) {
+  if (!(element instanceof HTMLElement)) {
+    return;
+  }
+
+  element.textContent = formatDurationFromMs(value);
+  if (typeof value === "number" && Number.isFinite(value)) {
+    element.title = `${Math.round(value)} ms`;
+  } else {
+    element.removeAttribute("title");
+  }
+}
+
+function setTimestampMetric(element, value) {
+  if (!(element instanceof HTMLElement)) {
+    return;
+  }
+
+  if (!value) {
+    element.textContent = "–";
+    element.removeAttribute("title");
+    return;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    element.textContent = "–";
+    element.removeAttribute("title");
+    return;
+  }
+
+  element.textContent = `${formatRelativeTime(date)} · ${date.toLocaleTimeString()}`;
+  element.title = date.toLocaleString();
+}
+
+function renderTelemetry(snapshot) {
+  if (!telemetryEnabled || !snapshot) {
+    return;
+  }
+
+  setNumberMetric(telemetryElements.channelTotal, snapshot.channelEvents?.total ?? 0);
+  setNumberMetric(telemetryElements.channelSnapshot, snapshot.channelEvents?.snapshotSize ?? 0);
+  setRelativeMetric(telemetryElements.channelLastEvent, snapshot.channelEvents?.lastEventAt);
+
+  setNumberMetric(telemetryElements.verificationsActive, snapshot.verifications?.active ?? 0);
+  setNumberMetric(telemetryElements.verificationsResolved, snapshot.verifications?.resolved ?? 0);
+  setNumberMetric(
+    telemetryElements.verificationsVerified,
+    snapshot.verifications?.resolvedByStatus?.verified ?? 0,
+  );
+  setNumberMetric(
+    telemetryElements.verificationsFailed,
+    snapshot.verifications?.resolvedByStatus?.failed ?? 0,
+  );
+
+  setNumberMetric(telemetryElements.automationTriggered, snapshot.automation?.triggered ?? 0);
+  setNumberMetric(telemetryElements.automationPending, snapshot.automation?.pending ?? 0);
+  setNumberMetric(telemetryElements.automationCompleted, snapshot.automation?.completed ?? 0);
+  setNumberMetric(telemetryElements.automationFailed, snapshot.automation?.failed ?? 0);
+  setDurationMetric(telemetryElements.automationAverage, snapshot.automation?.averageProcessingMs);
+
+  setTimestampMetric(telemetryBooted, snapshot.bootedAt);
+  setTimestampMetric(telemetryGenerated, snapshot.generatedAt);
+}
+
 function renderVerifications(records) {
   verificationList.replaceChildren();
 
@@ -117,12 +291,24 @@ function renderVerifications(records) {
       details.append(dt, dd);
     }
 
-    if (status !== "pending") {
-      node.querySelector(".card-actions").remove();
+    const actions = node.querySelector(".card-actions");
+    if (actions) {
+      if (status !== "pending") {
+        actions.remove();
+      } else {
+        actions.replaceChildren(createAutomationBadge());
+      }
     }
 
     verificationList.appendChild(node);
   }
+}
+
+function createAutomationBadge() {
+  const span = document.createElement("span");
+  span.className = "automation-badge";
+  span.textContent = "Automated verification in progress…";
+  return span;
 }
 
 function renderEvents(snapshot) {
@@ -473,6 +659,9 @@ function handleEventStreamPayload(payload) {
   }
 
   renderEvents(snapshot);
+  if (payload.metrics) {
+    renderTelemetry(payload.metrics);
+  }
 
   if (!channelTimelineSelect || !channelTimelineSelect.value) {
     return;
@@ -531,6 +720,9 @@ function ensureEventPolling() {
     void refreshEvents().catch((error) =>
       console.error("Event refresh failed", error),
     );
+    if (telemetryEnabled && !eventStream) {
+      void refreshTelemetry();
+    }
   }, REFRESH_INTERVAL_MS);
 }
 
@@ -569,6 +761,24 @@ async function refreshEvents() {
 
   if (channelTimelineSelect && channelTimelineSelect.value) {
     void loadChannelTimeline(channelTimelineSelect.value);
+  }
+}
+
+async function refreshTelemetry() {
+  if (!telemetryEnabled) {
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/metrics");
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`);
+    }
+
+    const snapshot = await response.json();
+    renderTelemetry(snapshot);
+  } catch (error) {
+    console.warn("Telemetry refresh failed", error);
   }
 }
 
@@ -701,7 +911,12 @@ channelTimelineRefresh?.addEventListener("click", () => {
 
 async function bootstrap() {
   try {
-    await Promise.all([refreshVerifications(), refreshEvents()]);
+    const tasks = [refreshVerifications(), refreshEvents()];
+    if (telemetryEnabled) {
+      tasks.push(refreshTelemetry());
+    }
+
+    await Promise.all(tasks);
   } catch (error) {
     console.error("Initial load failed", error);
     showFormFeedback("Unable to load initial data", "error");

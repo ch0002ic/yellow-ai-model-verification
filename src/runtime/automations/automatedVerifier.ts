@@ -4,8 +4,8 @@ import type { VerificationRecord } from "../../core/VerificationEngine.js";
 import type { VerificationResult } from "../../core/VerificationChannel.js";
 import logger from "../../utils/logger.js";
 
-const DEFAULT_MIN_LATENCY_MS = 1000;
-const DEFAULT_MAX_LATENCY_MS = 4000;
+const DEFAULT_MIN_LATENCY_MS = 400;
+const DEFAULT_MAX_LATENCY_MS = 1800;
 
 export interface AutomatedVerifierOptions {
   resolve: (result: VerificationResult) => Promise<void> | void;
