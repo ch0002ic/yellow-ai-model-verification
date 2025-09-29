@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nitrolite AI Verification Dashboard</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <h1>Nitrolite AI Verification</h1>
+        <p class="subtitle">Live channel telemetry and verification controls powered by Yellow ClearNode.</p>
+      </div>
+      <div class="status-indicator" id="ws-status" data-state="disconnected">WS: disconnected</div>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <h2>Start Verification</h2>
+        <form id="verification-form" class="form-grid">
+          <label>
+            <span>Model ID</span>
+            <input type="text" name="modelId" required placeholder="model-abc" />
+          </label>
+          <label>
+            <span>Verifier ID</span>
+            <input type="text" name="verifierId" required placeholder="verifier-123" />
+          </label>
+          <label>
+            <span>Input Hash</span>
+            <input type="text" name="inputHash" required placeholder="0x..." />
+          </label>
+          <label>
+            <span>Output Hash</span>
+            <input type="text" name="outputHash" required placeholder="0x..." />
+          </label>
+          <label>
+            <span>Latency (ms)</span>
+            <input type="number" name="latencyMs" min="0" step="1" required value="42" />
+          </label>
+          <label>
+            <span>Metadata (JSON)</span>
+            <textarea name="metadata" rows="3" placeholder='{"dataset":"imagenet"}'></textarea>
+          </label>
+          <button type="submit" class="primary">Create Verification</button>
+        </form>
+        <div class="feedback" id="form-feedback"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Active Verifications</h2>
+        <div id="verification-list" class="card-list" data-empty-message="No verifications created yet."></div>
+      </section>
+
+      <section class="panel">
+        <h2>ClearNode Stream</h2>
+        <div class="metrics">
+          <div class="metric">
+            <span class="metric-label">Channels tracked</span>
+            <span class="metric-value" id="metric-channels">0</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Batch updates</span>
+            <span class="metric-value" id="metric-batches">0</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Balance updates</span>
+            <span class="metric-value" id="metric-balances">0</span>
+          </div>
+        </div>
+        <div class="event-log" id="event-log"></div>
+      </section>
+
+      <section class="panel panel-timeline">
+        <h2>Channel Timeline</h2>
+        <div class="timeline-controls">
+          <label class="timeline-select">
+            <span>Channel</span>
+            <select id="channel-timeline-select">
+              <option value="">Select a channel</option>
+            </select>
+          </label>
+          <button type="button" class="ghost" id="channel-timeline-refresh">Refresh</button>
+        </div>
+        <div class="timeline" id="channel-timeline" data-state="empty">
+          <div class="timeline-message">Choose a channel to load its event history.</div>
+        </div>
+      </section>
+    </main>
+
+    <template id="verification-card-template">
+      <article class="card" data-status="pending">
+        <header class="card-header">
+          <h3 class="card-title"></h3>
+          <span class="status-chip"></span>
+        </header>
+        <dl class="card-details"></dl>
+        <footer class="card-actions">
+          <button data-action="resolve" data-status="verified" class="ghost">Mark Verified</button>
+          <button data-action="resolve" data-status="failed" class="ghost danger">Mark Failed</button>
+        </footer>
+      </article>
+    </template>
+
+    <script src="/assets/app.js" type="module"></script>
+  </body>
+</html>
