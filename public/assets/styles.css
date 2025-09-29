@@ -288,6 +288,42 @@ button.ghost.danger {
   gap: 0.35rem;
 }
 
+.metric.metric-sparkline {
+  gap: 0.65rem;
+}
+
+.metric-sparkline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.sparkline {
+  width: 100%;
+  height: 36px;
+}
+
+.sparkline path {
+  vector-effect: non-scaling-stroke;
+}
+
+.sparkline-area {
+  fill: rgba(56, 189, 248, 0.2);
+  stroke: none;
+}
+
+.sparkline-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.sparkline[data-empty="true"] {
+  opacity: 0.35;
+}
+
 .metric-label {
   opacity: 0.65;
   font-size: 0.8rem;
@@ -537,5 +573,13 @@ button.ghost.danger {
 
   .timeline-entry {
     background: rgba(255, 255, 255, 0.85);
+  }
+
+  .sparkline-area {
+    fill: rgba(14, 165, 233, 0.18);
+  }
+
+  .sparkline-line {
+    stroke: var(--accent-strong);
   }
 }

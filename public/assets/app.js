@@ -26,22 +26,33 @@ const telemetryElements = {
   automationFailed: document.getElementById("telemetry-automation-failed"),
   automationAverage: document.getElementById("telemetry-automation-avg"),
 };
+const telemetryEventRate = document.getElementById("telemetry-event-rate");
+const telemetryEventRateSparkline = document.getElementById("telemetry-event-rate-sparkline");
 const telemetryEnabled =
   telemetryBooted instanceof HTMLElement &&
   telemetryGenerated instanceof HTMLElement &&
   Object.values(telemetryElements).some((element) => element instanceof HTMLElement);
+const sparklineEnabled =
+  telemetryEventRate instanceof HTMLElement && telemetryEventRateSparkline instanceof SVGElement;
+const telemetryHistory = {
+  eventRate: [],
+};
 const numberFormatter = new Intl.NumberFormat("en-US");
 
 const REFRESH_INTERVAL_MS = 7500;
 const MAX_EVENT_ENTRIES = 24;
 const MAX_TIMELINE_ROWS = 75;
 const EVENT_STREAM_RETRY_MS = 5000;
+const MAX_SPARKLINE_POINTS = 24;
+const SPARKLINE_WIDTH = 100;
+const SPARKLINE_HEIGHT = 24;
 
 let currentTimelineChannel = "";
 let eventStream = null;
 let eventStreamRetryTimer = null;
 let eventPollingTimer = null;
 let demoMode = false;
+let lastTelemetrySample = null;
 
 const DEMO_CHANNEL_ID = "0xchannel-demo-001";
 const DEMO_BALANCE_ID = "demo-balance-001";
@@ -231,34 +242,183 @@ function setTimestampMetric(element, value) {
   element.title = date.toLocaleString();
 }
 
-function renderTelemetry(snapshot) {
-  if (!telemetryEnabled || !snapshot) {
+function resetEventRateTrend() {
+  telemetryHistory.eventRate = [];
+  lastTelemetrySample = null;
+
+  if (telemetryEventRate instanceof HTMLElement) {
+    telemetryEventRate.textContent = "–";
+    telemetryEventRate.removeAttribute("title");
+  }
+
+  if (telemetryEventRateSparkline instanceof SVGElement) {
+    telemetryEventRateSparkline.replaceChildren();
+    telemetryEventRateSparkline.dataset.empty = "true";
+  }
+}
+
+function updateEventRateTrend(snapshot) {
+  if (!sparklineEnabled || !snapshot?.channelEvents) {
     return;
   }
 
-  setNumberMetric(telemetryElements.channelTotal, snapshot.channelEvents?.total ?? 0);
-  setNumberMetric(telemetryElements.channelSnapshot, snapshot.channelEvents?.snapshotSize ?? 0);
-  setRelativeMetric(telemetryElements.channelLastEvent, snapshot.channelEvents?.lastEventAt);
+  const totalRaw = snapshot.channelEvents.total ?? snapshot.channelEvents.count;
+  const total = Number(totalRaw ?? 0);
+  const timestamp = snapshot.generatedAt ? new Date(snapshot.generatedAt).getTime() : Date.now();
 
-  setNumberMetric(telemetryElements.verificationsActive, snapshot.verifications?.active ?? 0);
-  setNumberMetric(telemetryElements.verificationsResolved, snapshot.verifications?.resolved ?? 0);
-  setNumberMetric(
-    telemetryElements.verificationsVerified,
-    snapshot.verifications?.resolvedByStatus?.verified ?? 0,
-  );
-  setNumberMetric(
-    telemetryElements.verificationsFailed,
-    snapshot.verifications?.resolvedByStatus?.failed ?? 0,
-  );
+  if (!Number.isFinite(total) || !Number.isFinite(timestamp)) {
+    return;
+  }
 
-  setNumberMetric(telemetryElements.automationTriggered, snapshot.automation?.triggered ?? 0);
-  setNumberMetric(telemetryElements.automationPending, snapshot.automation?.pending ?? 0);
-  setNumberMetric(telemetryElements.automationCompleted, snapshot.automation?.completed ?? 0);
-  setNumberMetric(telemetryElements.automationFailed, snapshot.automation?.failed ?? 0);
-  setDurationMetric(telemetryElements.automationAverage, snapshot.automation?.averageProcessingMs);
+  if (!lastTelemetrySample) {
+    lastTelemetrySample = { total, timestamp };
+    renderEventRateTrend(null);
+    return;
+  }
 
-  setTimestampMetric(telemetryBooted, snapshot.bootedAt);
-  setTimestampMetric(telemetryGenerated, snapshot.generatedAt);
+  const elapsedMs = timestamp - lastTelemetrySample.timestamp;
+  const delta = total - lastTelemetrySample.total;
+
+  lastTelemetrySample = { total, timestamp };
+
+  if (elapsedMs <= 0) {
+    renderEventRateTrend(null);
+    return;
+  }
+
+  const safeDelta = Math.max(0, delta);
+  const ratePerMinute = (safeDelta / elapsedMs) * 60_000;
+
+  if (!Number.isFinite(ratePerMinute)) {
+    renderEventRateTrend(null);
+    return;
+  }
+
+  telemetryHistory.eventRate.push(ratePerMinute);
+  if (telemetryHistory.eventRate.length > MAX_SPARKLINE_POINTS) {
+    telemetryHistory.eventRate.shift();
+  }
+
+  renderEventRateTrend(ratePerMinute);
+}
+
+function renderEventRateTrend(currentRate) {
+  if (telemetryEventRate instanceof HTMLElement) {
+    const latest =
+      typeof currentRate === "number" && Number.isFinite(currentRate)
+        ? currentRate
+        : telemetryHistory.eventRate.length > 0
+            ? telemetryHistory.eventRate[telemetryHistory.eventRate.length - 1]
+            : undefined;
+
+    if (typeof latest === "number" && Number.isFinite(latest)) {
+      const display = latest >= 100 ? Math.round(latest) : latest >= 10 ? latest.toFixed(1) : latest.toFixed(2);
+      telemetryEventRate.textContent = display;
+      telemetryEventRate.title = `${latest.toFixed(2)} events per minute`;
+    } else {
+      telemetryEventRate.textContent = "–";
+      telemetryEventRate.removeAttribute("title");
+    }
+  }
+
+  if (telemetryEventRateSparkline instanceof SVGElement) {
+    if (!telemetryHistory.eventRate.length) {
+      telemetryEventRateSparkline.replaceChildren();
+      telemetryEventRateSparkline.dataset.empty = "true";
+      return;
+    }
+
+    renderSparkline(telemetryEventRateSparkline, telemetryHistory.eventRate);
+    telemetryEventRateSparkline.dataset.empty = "false";
+  }
+}
+
+function renderSparkline(svgElement, data) {
+  if (!(svgElement instanceof SVGElement)) {
+    return;
+  }
+
+  const sliceStart = Math.max(0, data.length - MAX_SPARKLINE_POINTS);
+  const values = data.slice(sliceStart).map((value) => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : 0;
+  });
+
+  if (!values.length) {
+    svgElement.replaceChildren();
+    svgElement.dataset.empty = "true";
+    return;
+  }
+
+  if (values.length === 1) {
+    values.push(values[0]);
+  }
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min;
+
+  const coords = values.map((value, index) => {
+    const x = (index / (values.length - 1)) * SPARKLINE_WIDTH;
+    const normalized = range === 0 ? 0.5 : (value - min) / (range || 1);
+    const y = SPARKLINE_HEIGHT - normalized * SPARKLINE_HEIGHT;
+    return { x, y };
+  });
+
+  const linePath = coords
+    .map((point, index) => `${index === 0 ? "M" : "L"}${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+    .join(" ");
+
+  let areaPath = `M${coords[0].x.toFixed(2)} ${SPARKLINE_HEIGHT.toFixed(2)}`;
+  for (const point of coords) {
+    areaPath += ` L${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+  }
+  const lastPoint = coords[coords.length - 1];
+  areaPath += ` L${lastPoint.x.toFixed(2)} ${SPARKLINE_HEIGHT.toFixed(2)} Z`;
+
+  const areaNode = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  areaNode.setAttribute("d", areaPath);
+  areaNode.setAttribute("class", "sparkline-area");
+
+  const lineNode = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  lineNode.setAttribute("d", linePath);
+  lineNode.setAttribute("class", "sparkline-line");
+
+  svgElement.replaceChildren(areaNode, lineNode);
+}
+
+function renderTelemetry(snapshot) {
+  if (!snapshot) {
+    return;
+  }
+
+  if (telemetryEnabled) {
+    setNumberMetric(telemetryElements.channelTotal, snapshot.channelEvents?.total ?? 0);
+    setNumberMetric(telemetryElements.channelSnapshot, snapshot.channelEvents?.snapshotSize ?? 0);
+    setRelativeMetric(telemetryElements.channelLastEvent, snapshot.channelEvents?.lastEventAt);
+
+    setNumberMetric(telemetryElements.verificationsActive, snapshot.verifications?.active ?? 0);
+    setNumberMetric(telemetryElements.verificationsResolved, snapshot.verifications?.resolved ?? 0);
+    setNumberMetric(
+      telemetryElements.verificationsVerified,
+      snapshot.verifications?.resolvedByStatus?.verified ?? 0,
+    );
+    setNumberMetric(
+      telemetryElements.verificationsFailed,
+      snapshot.verifications?.resolvedByStatus?.failed ?? 0,
+    );
+
+    setNumberMetric(telemetryElements.automationTriggered, snapshot.automation?.triggered ?? 0);
+    setNumberMetric(telemetryElements.automationPending, snapshot.automation?.pending ?? 0);
+    setNumberMetric(telemetryElements.automationCompleted, snapshot.automation?.completed ?? 0);
+    setNumberMetric(telemetryElements.automationFailed, snapshot.automation?.failed ?? 0);
+    setDurationMetric(telemetryElements.automationAverage, snapshot.automation?.averageProcessingMs);
+
+    setTimestampMetric(telemetryBooted, snapshot.bootedAt);
+    setTimestampMetric(telemetryGenerated, snapshot.generatedAt);
+  }
+
+  updateEventRateTrend(snapshot);
 }
 
 function renderVerifications(records) {
@@ -327,6 +487,7 @@ function enableDemoMode(reason) {
   console.warn("Demo mode enabled due to API failure", reason);
   setStatusIndicator("demo");
   initialiseDemoData();
+  resetEventRateTrend();
   showFormFeedback("Demo mode active. Using simulated data while the API is unavailable.", "info");
   renderEvents(demoState.snapshot);
   renderVerifications(demoState.verifications);
@@ -1307,6 +1468,8 @@ channelTimelineRefresh?.addEventListener("click", () => {
 
   void loadChannelTimeline(channelTimelineSelect.value, { force: true });
 });
+
+resetEventRateTrend();
 
 async function bootstrap() {
   try {
