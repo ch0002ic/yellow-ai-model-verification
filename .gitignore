@@ -10,6 +10,7 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
 # Build outputs
 dist/
@@ -37,6 +38,10 @@ coverage/
 logs/
 temp/
 .temp/
+
+# Project data directories
+data/
+secrets/
 
 # IDE and editor artifacts
 .vscode/settings.json

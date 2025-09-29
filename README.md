@@ -1,282 +1,178 @@
-# 🌟 Yellow Network Ideathon 2025 - Real-Time AI Verification Network
+# Real-Time AI Model Verification Network (Nitrolite Build)
 
-[![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Yellow Network](https://img.shields.io/badge/Yellow%20Network-ERC--7824-yellow.svg)](https://yellow.org)
-[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
-[![Node.js](https://img.shields.io/badge/node.js-18+-green.svg)](https://nodejs.org/)
+This project bootstraps the **Real-Time AI Model Verification Network** envisioned for the Yellow Network Hackathon 2025. It is engineered around the [@erc7824/nitrolite](https://github.com/erc7824) SDK to provide gasless, real-time, cross-chain-verifiable AI inference auditing via ERC-7824 state channels.
 
-## 🚀 Overview
+## Key Characteristics
 
-**Real-Time AI Model Verification Network** is a cutting-edge decentralized application built for the **Yellow Network Ideathon 2025**. It leverages the power of **ERC-7824 state channels** and the **Nitrolite SDK** to provide sub-second AI model verification across multiple blockchains with gasless transactions.
+- **Nitrolite Native** – Off-chain verification sessions are orchestrated through ERC-7824 state channels for instant, gasless UX backed by the official Nitrolite SDK.
+- **Telemetry-Driven** – A realtime collector maintains channel, verification, and automation metrics that stream to the UI via Server-Sent Events.
+- **SQLite Persistence** – ClearNode event history is durably captured using `better-sqlite3`, enabling cold-start hydration and replay.
+- **Modular Services** – Config-driven architecture with discrete components for environment loading, Nitrolite connectivity, verification engines, and data sinks.
 
-### 🎯 Key Features
-
-- **🔥 Real-Time Verification**: Sub-second AI model verification using state channels
-- **🌐 Cross-Chain Support**: Ethereum, Base, Polygon, Arbitrum integration  
-- **⚡ Gasless Transactions**: Powered by Nitrolite SDK
-- **📊 Live Dashboard**: Real-time WebSocket monitoring
-- **🔒 Multi-Party Channels**: Advanced verification with multiple validators
-- **💾 Production Ready**: Docker deployment with comprehensive logging
-
-## 🏗 Architecture
+## Repository Layout
 
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   HTTP Server    │    │  Verification   │
-│   Dashboard     │◄──►│   Express.js     │◄──►│   Network       │
-│   (WebSocket)   │    │   + WebSocket    │    │                 │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                                │                         │
-                                ▼                         ▼
-                    ┌──────────────────┐    ┌─────────────────┐
-                    │  Yellow Network  │    │  Nitrolite SDK  │
-                    │  Integration     │◄──►│  State Channels │
-                    │  (Real Channel)  │    │  (Base Sepolia) │
-                    └──────────────────┘    └─────────────────┘
+.
+├── docs/                              # Hackathon notes and planning artefacts
+├── public/                            # Dashboard HTML, CSS, and client-side JS
+├── scripts/                           # Operator key helpers
+├── src/
+│   ├── config/environment.ts          # Typed env loading + validation
+│   ├── core/                          # Nitrolite clients, verification engine
+│   ├── persistence/                   # SQLite ClearNode event repository
+│   ├── runtime/                       # Channel store, telemetry collector
+│   ├── server/                        # Express API + SSE streaming
+│   └── utils/logger.ts                # Pino logger configuration
+├── package.json
+├── tsconfig.json
+└── README.md
 ```
 
-## 🚀 Quick Start
-
-### 📋 Prerequisites
-
-- Node.js 18+ 
-- Docker & Docker Compose (optional)
-- Git
-
-### ⚡ 5-Minute Setup
+## Quick Start
 
 ```bash
-# Clone the repository
-git clone https://github.com/ch0002ic/yellow-ai-model-verification.git
-cd yellow-ai-model-verification
-
-# Install dependencies
 npm install
-
-# Build the application
-npm run build
-
-# Start development server
 npm run dev
 ```
 
-🌐 **Access the application**: [http://localhost:3000](http://localhost:3000)
+The development server now serves both the REST API and a lightweight dashboard at `http://localhost:4000`.
 
-### 🔧 Environment Configuration
+### REST API
 
-The application is pre-configured with working Yellow Network contract addresses on Base Sepolia testnet. No additional configuration needed for demo!
+Available endpoints:
 
-### 🐳 Docker Deployment
+- `POST /api/verifications` to register a new inference verification request.
+- `POST /api/verifications/:id/resolve` to mark an inference as `verified`/`failed` and trigger channel closure.
+- `GET /api/verifications/:id` to retrieve verification status, channel metadata, and cryptographic attestations.
+- `GET /api/verifications` to list all verifications currently tracked in memory.
+- `GET /api/metrics` to fetch the latest automation + telemetry snapshot.
+- `GET /api/clearnode/events` to inspect the most recent ClearNode channel and balance updates captured from the WebSocket stream.
+- `GET /api/clearnode/events/stream` to consume a Server-Sent Events feed with live ClearNode telemetry snapshots.
+
+### Frontend dashboard
+
+Navigate to `http://localhost:4000/` (or `http://localhost:4000/dashboard`) to access the real-time Nitrolite dashboard:
+
+- Submit new verification requests without cURL.
+- Review active/closed verifications and resolve them inline.
+- Monitor ClearNode channel/balance telemetry with live metrics and an event log.
+- Drill into per-channel timelines that hydrate automatically when new updates arrive over the SSE stream.
+
+These endpoints talk to a Nitrolite-backed channel service that lazily establishes a wallet-backed connection, retrieves open channel metadata, and prepares verification sessions ready to be enriched with real model attestations, zero-knowledge proofs, and audit storage.
+
+## Environment Configuration
+
+Copy `.env.example` to `.env` and configure the properties below. All Nitrolite settings align with the official SDK workflow (channel creation via apps.yellow.com, ClearNode WebSocket connectivity, and on-chain RPC access):
+
+```
+NITROLITE_RPC_URL=
+NITROLITE_APP_ID=
+NITROLITE_APP_SECRET=
+NITROLITE_APP_NAME=
+NITROLITE_RPC_HTTP_URL=
+NITROLITE_CLEAR_NODE_WS_URL=
+NITROLITE_CHAIN_ID=
+NITROLITE_CHAIN_NAME=
+NITROLITE_OPERATOR_PRIVATE_KEY=
+NITROLITE_CHALLENGE_DURATION_SECONDS=
+NITROLITE_CONTRACT_CUSTODY=
+NITROLITE_CONTRACT_GUEST_ADDRESS=
+NITROLITE_CONTRACT_ADJUDICATOR=
+PORT=4000
+```
+
+> ⚠️ Never commit secrets. These values should remain local or be injected via deployment secrets.
+
+> 💡 When targeting the Yellow sandbox, set `NITROLITE_CLEAR_NODE_WS_URL=wss://clearnet-sandbox.yellow.com/ws`. If you see
+> `Unexpected server response: 200` in the logs, double-check that the URL points to a WebSocket-capable gateway (the
+> production REST endpoint at `clearnet.yellow.org` will answer with HTTP 200 but will not upgrade the connection).
+
+The Nitrolite SDK enforces a minimum challenge duration of 3,600 seconds. Ensure `NITROLITE_CHALLENGE_DURATION_SECONDS` is set to `3600` or higher for successful bootstrap.
+
+### Operator Private Key Setup
+
+The operator key is a production-grade secret. Prefer loading it from a file instead of keeping it inline in `.env`.
 
 ```bash
-# Quick deployment with Docker
-docker-compose up --build
+# Generate a fresh 32-byte private key (hex encoded)
+openssl rand -hex 32 > ./secrets/operator.key
 
-# Check health status
-curl http://localhost:3000/health
+# Ensure the key stays 0x-prefixed and has the correct permissions
+chmod 600 ./secrets/operator.key
+echo "0x$(cat ./secrets/operator.key | tr -d '\n')" > ./secrets/operator.key
+
+# Point the application at the file (recommended)
+echo "NITROLITE_OPERATOR_PRIVATE_KEY_FILE=./secrets/operator.key" >> .env
+
+# Or inject the value directly (less secure)
+export NITROLITE_OPERATOR_PRIVATE_KEY=0xYour32ByteHexKey
 ```
 
-## 🎮 Demo Features
+`NITROLITE_OPERATOR_PRIVATE_KEY_FILE` and `NITROLITE_OPERATOR_PRIVATE_KEY_PATH` will both load the file content, trim whitespace, and enforce the 32-byte requirement. The direct environment variable still works, but avoid committing it to disk or source control.
 
-### 🌟 Interactive Dashboard
-
-Access the live dashboard at [http://localhost:3000](http://localhost:3000) featuring:
-
-1. **� Verify AI Model**: Real-time model verification with gasless transactions
-2. **📊 Show Channel Info**: Live Yellow Network state channel analytics  
-3. **⚡ Quick Verify**: Fast verification demo (sub-second performance)
-4. **🔄 Real-Time Updates**: WebSocket-powered live monitoring
-5. **📈 Performance Metrics**: System throughput and latency tracking
-
-### 🛠 API Endpoints
-
-| Endpoint | Method | Description | Status |
-|----------|--------|-------------|--------|
-| `/health` | GET | System health check | ✅ Working |
-| `/api/gasless-proof` | POST | Gasless AI model verification | ✅ Working |
-| `/api/cross-chain-verify` | POST | Cross-chain verification | ✅ Working |
-| `/api/channel-info` | GET | Yellow Network channel status | ✅ Working |
-
-### � Example API Usage
+Prefer tooling? The repo ships with a helper that generates the key and writes it to `./secrets/operator.key` (the default location automatically detected by the loader):
 
 ```bash
-# Submit gasless verification
-curl -X POST http://localhost:3000/api/gasless-proof \
-  -H "Content-Type: application/json" \
-  -d '{
-    "modelHash": "0x123456789abcdef",
-    "proof": "test-verification-proof"
-  }'
+npm run generate:operator-key
 
-# Response: Real Yellow Network integration
-{
-  "success": true,
-  "data": {
-    "proofHash": "0x822435a8ef2f4",
-    "verificationId": "gasless_verify_1758597698087",
-    "validUntil": 1758601298,
-    "gaslessTx": {
-      "hash": "0xbbcb271e60a14",
-      "gasSaved": 20174,
-      "estimatedSavings": "$38.71",
-      "status": "confirmed"
-    },
-    "stateChannel": {
-      "channelId": "0x37825bfb197fa307b6063e88e872efc6c1fed32dcbdb886ff584933bd05dfc9f",
-      "updated": true,
-      "blockNumber": 18276082
-    },
-    "verificationTime": "63ms"
-  }
-}
+# optionally, pick a custom path
+npm run generate:operator-key -- ./secrets/nitrolite/operator.key
+
+# rotate the existing key, back up the old one, and update .env in one step
+npm run rotate:operator-key -- --update-env
 ```
 
-## 🔗 Yellow Network Integration
+Pass `--force` to overwrite an existing file. Remember to add your secrets directory to `.gitignore` if you customise the path.
 
-### 🎯 Real State Channel
+## ClearNode RPC Integration
 
-- **Channel ID**: `0x37825bfb197fa307b6063e88e872efc6c1fed32dcbdb886ff584933bd05dfc9f`
-- **Network**: Base Sepolia Testnet (Chain ID: 84532)
-- **Status**: Active with real USDC deposits
-- **Created**: September 22, 2025
+`NitroliteChannelService` now coordinates channel lifecycle with the ClearNode app API before handing payloads to the on-chain Nitrolite SDK. The workflow currently assumes a Basic-authenticated REST surface exposed at `NITROLITE_RPC_URL`:
 
-### ⚡ Nitrolite SDK Features
+- `POST /channels` – returns a signed channel bootstrap (fixed part, unsigned initial state, server signature, and optional funding directives). The service automatically performs token approval + `depositAndCreateChannel` when funding is required, otherwise it issues `createChannel` directly.
+- `POST /channels/:channelId/close` – returns the ClearNode-signed final state and opaque closure metadata used to execute `closeChannel` on-chain.
 
-- **ERC-7824 State Channels**: Authentic implementation
-- **Gasless Transactions**: Signature-based authorization
-- **Cross-Chain Verification**: Multi-network proof generation
-- **Sub-Second Performance**: <100ms verification times
+If the RPC call fails, the service falls back to reusing any existing Nitrolite channel and degrades gracefully to an ephemeral session so that verification can continue during outages. Successful responses are captured inside each verification session’s metadata, including transaction hashes and ClearNode session keys, making it straightforward to audit the full lifecycle later on.
 
-## 📊 Technical Architecture
+### Sandbox Resources
 
-```
-📁 Project Structure:
-├── 📁 src/
-│   ├── 📁 core/                          # Core System Components
-│   │   └── VerificationNetwork.ts           # Main verification orchestrator
-│   ├── 📁 network/                       # Yellow Network Integration  
-│   │   ├── StateChannelManager.ts           # Nitrolite SDK state channels
-│   │   ├── RealNitroliteIntegration.ts      # Authentic SDK patterns
-│   │   └── CrossChainBridgeManager.ts       # Multi-network operations
-│   ├── 📁 server/                        # HTTP + WebSocket Server
-│   │   └── HttpServer.ts                    # Express server with real-time updates
-│   └── 📁 utils/                         # Utilities
-│       └── logger.ts                        # Structured logging
-├── 📁 public/                            # Frontend Dashboard
-│   ├── index.html                           # Interactive demo interface
-│   └── assets/dashboard.js                  # Real-time WebSocket client
-├── 📄 package.json                       # Dependencies & scripts
-├── 📄 tsconfig.json                      # TypeScript configuration
-└── 📄 docker-compose.yml                 # Production deployment
+For forthcoming WebSocket and signing flows, the Yellow sandbox stack is available:
+
+- ClearNode WebSocket: `wss://clearnet-sandbox.yellow.com/ws`
+- Testnet faucet:
+
+	```bash
+	curl -X POST https://clearnet-sandbox.yellow.com/faucet/requestTokens \
+		-H "Content-Type: application/json" \
+		-d '{"userAddress":"0xYourOperatorAddress"}'
+	```
+
+- Documentation: https://docs.yellow.org/
+
+> ℹ️  When implementing the EIP-712 `auth_verify` handshake, the sandbox currently expects a minimal domain like:
+
+```ts
+const getAuthDomain = () => ({
+	name: "Name of the Application",
+});
 ```
 
-## 🚀 Performance Metrics
+### WebSocket Bootstrap Preview
 
-| Metric | Target | Achieved | Status |
-|--------|--------|----------|--------|
-| **Verification Latency** | <1000ms | 63ms | ✅ Exceeded |
-| **API Response Time** | <200ms | <100ms | ✅ Exceeded |
-| **WebSocket Latency** | <50ms | Real-time | ✅ Achieved |
-| **Gas Savings** | >50% | ~$38/tx | ✅ Exceeded |
-| **Uptime** | 99%+ | 100% | ✅ Achieved |
+`ClearNodeWebSocketClient` establishes a long-lived connection to the sandbox gateway during bootstrap. At the moment it logs inbound frames and prepares a stubbed `auth_request` payload (via `createAuthRequestMessage`) so the EIP-712 signing surface is ready. The next iteration will wire in the full `auth_request → auth_verify` handshake and channel lifecycle streaming.
 
-## 🧪 Testing & Validation
+## Next Steps
 
-```bash
-# Build verification
-npm run build
+1. Implement real cryptographic verification primitives (ZK proofs, signature checks).
+2. Layer in ClearNode WebSocket streaming so the backend can react to mid-session state updates and disputes in real time.
+3. Extend the verification engine with policy enforcement (bias, drift, anomaly detection).
+4. Add persistence (SQL/NoSQL) for audit trails and dashboards.
+5. Implement the companion frontend that consumes the REST API and visualises verification proofs in real time.
 
-# Type checking  
-npm run type-check
+## Hackathon Deliverables Alignment
 
-# Code quality
-npm run lint
-
-# Health check
-npm run health
-
-# Integration test
-npm run test:integration
-```
-
-## 🌐 Supported Networks
-
-### 🎯 Primary Network
-- **Base Sepolia Testnet** (Chain ID: 84532) - Active deployment
-
-### 🔄 Cross-Chain Support
-- **Ethereum Sepolia** (Chain ID: 11155111)
-- **Polygon Mumbai** (Chain ID: 80001)  
-- **Arbitrum Goerli** (Chain ID: 421613)
-- **Optimism Goerli** (Chain ID: 420)
-
-## 🎯 Ideathon Highlights
-
-### 🏆 Innovation Achievements
-
-1. **✅ Real Yellow Network Integration**: Using actual deployed state channels
-2. **✅ Sub-Second Performance**: 63ms verification latency achieved
-3. **✅ Gasless Transactions**: $38+ gas savings per transaction
-4. **✅ Cross-Chain Verification**: Multi-network AI model validation
-5. **✅ Production Deployment**: Docker + comprehensive logging
-
-### 📈 Technical Excellence
-
-- **Real-Time WebSocket Updates**: Live dashboard monitoring
-- **TypeScript + ESLint**: Zero errors, production-ready code
-- **Authentic SDK Integration**: Proper Nitrolite implementation
-- **Comprehensive Logging**: Structured JSON logging for production
-- **Environment Management**: Clean demo/production configuration
-
-## 🚀 Deployment
-
-### 🌍 Vercel Deployment
-
-Ready for Vercel deployment with:
-- Build command: `npm run build`
-- Output directory: `dist`
-- Node.js 18+ environment
-- Environment variables configured
-
-### 🐳 Docker Production
-
-```bash
-# Production deployment
-docker-compose -f docker-compose.yml up -d
-
-# Monitor logs
-docker-compose logs -f
-
-# Health check
-curl http://localhost:3000/health
-```
-
-## 🤝 Contributing
-
-1. Fork the repository: `https://github.com/ch0002ic/yellow-ai-model-verification`
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-## 📄 License
-
-MIT License - Built for Yellow Network Ideathon 2025
-
-## 🙏 Acknowledgments
-
-- **Yellow Network** for the innovative ERC-7824 standard and Nitrolite SDK
-- **Base Network** for reliable testnet infrastructure
-- **Ideathon Organizers** for the opportunity to build the future of AI verification
-
----
-
-<div align="center">
-
-**🌟 Built for Yellow Network Ideathon 2025 🌟**
-
-[Live Demo](http://localhost:3000) • [GitHub](https://github.com/ch0002ic/yellow-ai-model-verification) • [API Docs](http://localhost:3000/health)
-
-**Team**: HashBill | **Event**: Yellow Network Ideathon Singapore | **Date**: September 2025
-
-</div>
+- **Nitrolite SDK Usage:** Core session lifecycle is executed through the Nitrolite client.
+- **Creativity & Innovation:** Establishes the first verifiable AI transparency fabric using ERC-7824 channels.
+- **Technical Execution:** Modular TypeScript codebase with clear separation of concerns and future-proofing for production-hardening.
+- **Real-World Utility:** Tackles enterprise AI trust, compliance, and audit pain points.
+- **Scalability & Adoption:** Chain-agnostic design enables cross-industry deployment and marketplace integrations.
+- **Yellow Tech Impact:** Demonstrates immediate cost (gasless), speed (off-chain), and UX (web2-like) advantages enabled by Nitrolite.
