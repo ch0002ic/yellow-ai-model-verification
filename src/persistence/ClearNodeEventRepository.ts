@@ -94,7 +94,10 @@ export class ClearNodeEventRepository {
 
     const transaction = this.db.transaction((rows: ChannelEventRow[]) => {
       for (const row of rows) {
-        insert.run(row);
+        insert.run({
+          ...row,
+          channelId: row.channelId ?? null,
+        });
       }
     });
 
