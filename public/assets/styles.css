@@ -53,6 +53,12 @@ body {
   color: #bbf7d0;
 }
 
+.status-indicator[data-state="demo"] {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(59, 130, 246, 0.18);
+  color: #bfdbfe;
+}
+
 .layout {
   display: grid;
   gap: clamp(1.5rem, 3vw, 2.5rem);

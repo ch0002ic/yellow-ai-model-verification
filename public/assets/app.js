@@ -41,6 +41,19 @@ let currentTimelineChannel = "";
 let eventStream = null;
 let eventStreamRetryTimer = null;
 let eventPollingTimer = null;
+let demoMode = false;
+
+const DEMO_CHANNEL_ID = "0xchannel-demo-001";
+const DEMO_BALANCE_ID = "demo-balance-001";
+const demoState = {
+  verifications: [],
+  snapshot: null,
+  channelHistory: new Map(),
+  telemetry: null,
+};
+
+const generateId = () =>
+  (window.crypto?.randomUUID?.() ?? `demo-${Date.now()}-${Math.random().toString(16).slice(2)}`);
 
 async function safeFetchJSON(url, options) {
   try {
@@ -66,7 +79,8 @@ async function safeFetchJSON(url, options) {
 
 function setStatusIndicator(state) {
   statusIndicator.dataset.state = state;
-  statusIndicator.textContent = `WS: ${state}`;
+  const label = state === "demo" ? "demo" : state;
+  statusIndicator.textContent = `WS: ${label.toUpperCase()}`;
 }
 
 function parseMetadata(input) {
@@ -302,6 +316,324 @@ function renderVerifications(records) {
 
     verificationList.appendChild(node);
   }
+}
+
+function enableDemoMode(reason) {
+  if (demoMode) {
+    return;
+  }
+
+  demoMode = true;
+  console.warn("Demo mode enabled due to API failure", reason);
+  setStatusIndicator("demo");
+  initialiseDemoData();
+  showFormFeedback("Demo mode active. Using simulated data while the API is unavailable.", "info");
+  renderEvents(demoState.snapshot);
+  renderVerifications(demoState.verifications);
+  renderTelemetry(demoState.telemetry);
+}
+
+function initialiseDemoData() {
+  const now = new Date();
+
+  const demoChannelPayload = {
+    channelId: DEMO_CHANNEL_ID,
+    state: "active",
+    sequence: 1,
+    metadata: {
+      modelId: "clip-vit-base-32",
+      verifierId: "yellow-clearnode-auditor",
+      sdkBacked: false,
+      demo: true,
+    },
+    updatedAt: now.toISOString(),
+  };
+
+  demoState.snapshot = {
+    channels: [
+      {
+        id: DEMO_CHANNEL_ID,
+        updatedAt: now,
+        payload: demoChannelPayload,
+      },
+    ],
+    batches: [],
+    balances: [
+      {
+        id: DEMO_BALANCE_ID,
+        updatedAt: now,
+        payload: [
+          {
+            channelId: DEMO_CHANNEL_ID,
+            asset: "USDC",
+            amount: "0.00",
+          },
+        ],
+      },
+    ],
+  };
+
+  demoState.channelHistory.set(DEMO_CHANNEL_ID, [
+    {
+      id: generateId(),
+      type: "channel",
+      occurredAt: now.toISOString(),
+      channelId: DEMO_CHANNEL_ID,
+      payload: demoChannelPayload,
+    },
+  ]);
+
+  demoState.verifications = [];
+
+  demoState.telemetry = {
+    bootedAt: now.toISOString(),
+    generatedAt: now.toISOString(),
+    channelEvents: {
+      total: 1,
+      byType: {
+        channel: 1,
+        channels: 0,
+        balance: 0,
+      },
+      lastEventAt: now.toISOString(),
+      snapshotSize: 1,
+    },
+    verifications: {
+      totalStarted: 0,
+      active: 0,
+      resolved: 0,
+      resolvedByStatus: {
+        pending: 0,
+        verified: 0,
+        failed: 0,
+      },
+      lastStartedAt: undefined,
+      lastResolvedAt: undefined,
+    },
+    automation: {
+      triggered: 0,
+      pending: 0,
+      completed: 0,
+      failed: 0,
+      skipped: 0,
+      processingSumMs: 0,
+      processingCount: 0,
+      averageProcessingMs: null,
+      lastCompletedAt: undefined,
+    },
+  };
+}
+
+function updateDemoTelemetryGenerated() {
+  if (!demoState.telemetry) {
+    return;
+  }
+
+  demoState.telemetry.generatedAt = new Date().toISOString();
+}
+
+function appendDemoChannelEvent(payload, type = "channel") {
+  const occurredAt = new Date(payload?.updatedAt ?? Date.now());
+  const channelId =
+    (payload && typeof payload === "object" && (payload.channelId || payload.session?.channelId)) ||
+    DEMO_CHANNEL_ID;
+  const timestamped = {
+    id: generateId(),
+    updatedAt: occurredAt,
+    payload,
+  };
+
+  if (!demoState.snapshot) {
+    demoState.snapshot = { channels: [], batches: [], balances: [] };
+  }
+
+  if (type === "channel") {
+    demoState.snapshot.channels.unshift({
+      ...timestamped,
+      id: channelId,
+    });
+    demoState.snapshot.channels = demoState.snapshot.channels.slice(0, MAX_EVENT_ENTRIES);
+  } else if (type === "channels") {
+    demoState.snapshot.batches.unshift(timestamped);
+    demoState.snapshot.batches = demoState.snapshot.batches.slice(0, MAX_EVENT_ENTRIES);
+  } else if (type === "balance") {
+    demoState.snapshot.balances.unshift(timestamped);
+    demoState.snapshot.balances = demoState.snapshot.balances.slice(0, MAX_EVENT_ENTRIES);
+  }
+
+  const history = demoState.channelHistory.get(channelId) ?? [];
+  history.unshift({
+    id: timestamped.id,
+    type,
+    occurredAt: occurredAt.toISOString(),
+    channelId,
+    payload,
+  });
+  demoState.channelHistory.set(channelId, history);
+
+  if (demoState.telemetry?.channelEvents) {
+    demoState.telemetry.channelEvents.total += 1;
+    if (demoState.telemetry.channelEvents.byType[type] !== undefined) {
+      demoState.telemetry.channelEvents.byType[type] += 1;
+    }
+    demoState.telemetry.channelEvents.lastEventAt = occurredAt.toISOString();
+    demoState.telemetry.channelEvents.snapshotSize = demoState.snapshot.channels.length;
+  }
+
+  updateDemoTelemetryGenerated();
+
+  if (channelTimelineSelect && channelTimelineSelect.value === channelId) {
+    renderChannelTimelineEntries(history);
+  }
+}
+
+function createDemoVerification(payload) {
+  if (!demoState.telemetry) {
+    initialiseDemoData();
+  }
+
+  const inferenceId = generateId();
+  const now = new Date();
+
+  const session = {
+    channelId: DEMO_CHANNEL_ID,
+    state: "active",
+    openedAt: now,
+    metadata: {
+      ...(payload.metadata ?? {}),
+      modelId: payload.modelId,
+      verifierId: payload.verifierId,
+      sdkBacked: false,
+      demo: true,
+    },
+  };
+
+  const inference = {
+    inferenceId,
+    modelId: payload.modelId,
+    inputHash: payload.inputHash,
+    outputHash: payload.outputHash,
+    latencyMs: payload.latencyMs,
+    metadata: payload.metadata,
+  };
+
+  const record = {
+    id: inferenceId,
+    channelSnapshot: {
+      session,
+      inflight: [inference],
+      results: [
+        {
+          inferenceId,
+          status: "pending",
+        },
+      ],
+    },
+  };
+
+  demoState.verifications.unshift(record);
+
+  if (demoState.telemetry) {
+    demoState.telemetry.verifications.totalStarted += 1;
+    demoState.telemetry.verifications.active += 1;
+    demoState.telemetry.verifications.lastStartedAt = now.toISOString();
+    demoState.telemetry.automation.triggered += 1;
+    demoState.telemetry.automation.pending += 1;
+    updateDemoTelemetryGenerated();
+  }
+
+  appendDemoChannelEvent(
+    {
+      ...session,
+      event: "inference_registered",
+      inferenceId,
+      updatedAt: now.toISOString(),
+    },
+    "channel",
+  );
+
+  renderVerifications(demoState.verifications);
+  renderEvents(demoState.snapshot);
+  renderTelemetry(demoState.telemetry);
+
+  scheduleDemoResolution(record, payload);
+}
+
+function scheduleDemoResolution(record, payload) {
+  const processingMs = Math.round(600 + Math.random() * 800);
+
+  window.setTimeout(() => {
+    const now = new Date();
+
+    record.result = {
+      inferenceId: record.id,
+      status: "verified",
+      proofUrl: `https://clearnode.yellow.dev/proofs/${record.id}`,
+      completedAt: now,
+      metadata: {
+        ...(payload.metadata ?? {}),
+        automated: true,
+        evaluatedBy: "demo-automated-verifier",
+        processingMs,
+        createdAt: now.toISOString(),
+      },
+    };
+
+    if (record.channelSnapshot) {
+      record.channelSnapshot.inflight = record.channelSnapshot.inflight.filter(
+        (item) => item.inferenceId !== record.id,
+      );
+
+      const resultIndex = record.channelSnapshot.results.findIndex(
+        (item) => item.inferenceId === record.id,
+      );
+
+      if (resultIndex >= 0) {
+        record.channelSnapshot.results[resultIndex] = record.result;
+      } else {
+        record.channelSnapshot.results.push(record.result);
+      }
+    }
+
+    if (demoState.telemetry) {
+      demoState.telemetry.verifications.active = Math.max(
+        0,
+        demoState.telemetry.verifications.active - 1,
+      );
+      demoState.telemetry.verifications.resolved += 1;
+      demoState.telemetry.verifications.resolvedByStatus.verified += 1;
+      demoState.telemetry.verifications.lastResolvedAt = now.toISOString();
+
+      demoState.telemetry.automation.pending = Math.max(
+        0,
+        demoState.telemetry.automation.pending - 1,
+      );
+      demoState.telemetry.automation.completed += 1;
+      demoState.telemetry.automation.processingSumMs += processingMs;
+      demoState.telemetry.automation.processingCount += 1;
+      demoState.telemetry.automation.averageProcessingMs = Math.round(
+        demoState.telemetry.automation.processingSumMs /
+          demoState.telemetry.automation.processingCount,
+      );
+      demoState.telemetry.automation.lastCompletedAt = now.toISOString();
+      updateDemoTelemetryGenerated();
+    }
+
+    appendDemoChannelEvent(
+      {
+        ...record.channelSnapshot.session,
+        event: "inference_verified",
+        inferenceId: record.id,
+        result: record.result,
+        updatedAt: now.toISOString(),
+      },
+      "channel",
+    );
+
+    renderVerifications(demoState.verifications);
+    renderEvents(demoState.snapshot);
+    renderTelemetry(demoState.telemetry);
+  }, processingMs);
 }
 
 function createAutomationBadge() {
@@ -634,6 +966,12 @@ async function loadChannelTimeline(channelId, { force = false } = {}) {
   currentTimelineChannel = channelId;
   setTimelineLoading();
 
+  if (demoMode) {
+    const rows = demoState.channelHistory.get(channelId) ?? [];
+    renderChannelTimelineEntries(rows);
+    return;
+  }
+
   try {
     const rows = await safeFetchJSON(`/api/clearnode/channels/${encodeURIComponent(channelId)}`);
     renderChannelTimelineEntries(rows);
@@ -674,6 +1012,10 @@ function handleEventStreamPayload(payload) {
 }
 
 function startEventStream() {
+  if (demoMode) {
+    return;
+  }
+
   if (!window.EventSource || eventStream) {
     return;
   }
@@ -751,21 +1093,61 @@ function scheduleEventStreamRestart() {
 }
 
 async function refreshVerifications() {
-  const records = await safeFetchJSON("/api/verifications");
-  renderVerifications(records);
+  if (demoMode) {
+    renderVerifications(demoState.verifications);
+    return;
+  }
+
+  try {
+    const records = await safeFetchJSON("/api/verifications");
+    renderVerifications(records);
+  } catch (error) {
+    console.warn("Verification refresh failed, switching to demo mode", error);
+    enableDemoMode(error);
+    renderVerifications(demoState.verifications);
+  }
 }
 
 async function refreshEvents() {
-  const snapshot = await safeFetchJSON("/api/clearnode/events");
-  renderEvents(snapshot);
+  if (demoMode) {
+    if (demoState.snapshot) {
+      renderEvents(demoState.snapshot);
+    }
 
-  if (channelTimelineSelect && channelTimelineSelect.value) {
-    void loadChannelTimeline(channelTimelineSelect.value);
+    if (channelTimelineSelect && channelTimelineSelect.value) {
+      void loadChannelTimeline(channelTimelineSelect.value);
+    }
+    return;
+  }
+
+  try {
+    const snapshot = await safeFetchJSON("/api/clearnode/events");
+    renderEvents(snapshot);
+
+    if (channelTimelineSelect && channelTimelineSelect.value) {
+      void loadChannelTimeline(channelTimelineSelect.value);
+    }
+  } catch (error) {
+    console.warn("Event refresh failed, switching to demo mode", error);
+    enableDemoMode(error);
+    if (demoState.snapshot) {
+      renderEvents(demoState.snapshot);
+    }
+    if (channelTimelineSelect && channelTimelineSelect.value) {
+      void loadChannelTimeline(channelTimelineSelect.value);
+    }
   }
 }
 
 async function refreshTelemetry() {
   if (!telemetryEnabled) {
+    return;
+  }
+
+  if (demoMode) {
+    if (demoState.telemetry) {
+      renderTelemetry(demoState.telemetry);
+    }
     return;
   }
 
@@ -786,17 +1168,31 @@ async function handleCreateVerification(event) {
   event.preventDefault();
   const data = new FormData(verificationForm);
 
+  let metadata;
   try {
-    const metadata = parseMetadata(data.get("metadata"));
-    const payload = {
-      modelId: data.get("modelId")?.toString().trim(),
-      verifierId: data.get("verifierId")?.toString().trim(),
-      inputHash: data.get("inputHash")?.toString().trim(),
-      outputHash: data.get("outputHash")?.toString().trim(),
-      latencyMs: Number(data.get("latencyMs")),
-      metadata,
-    };
+    metadata = parseMetadata(data.get("metadata"));
+  } catch (error) {
+    showFormFeedback(error?.message ?? "Metadata must be valid JSON", "error");
+    return;
+  }
 
+  const payload = {
+    modelId: data.get("modelId")?.toString().trim() ?? "",
+    verifierId: data.get("verifierId")?.toString().trim() ?? "",
+    inputHash: data.get("inputHash")?.toString().trim() ?? "",
+    outputHash: data.get("outputHash")?.toString().trim() ?? "",
+    latencyMs: Number(data.get("latencyMs")),
+    metadata,
+  };
+
+  if (demoMode) {
+    createDemoVerification(payload);
+    verificationForm.reset();
+    showFormFeedback("Verification created and evaluated automatically (demo mode)", "success");
+    return;
+  }
+
+  try {
     await safeFetchJSON("/api/verifications", {
       method: "POST",
       body: JSON.stringify(payload),
@@ -807,7 +1203,10 @@ async function handleCreateVerification(event) {
     await refreshVerifications();
   } catch (error) {
     console.error(error);
-    showFormFeedback(error.message ?? "Failed to create verification", "error");
+    enableDemoMode(error);
+    createDemoVerification(payload);
+    verificationForm.reset();
+    showFormFeedback("Verification created and evaluated automatically (demo mode)", "success");
   }
 }
 
@@ -920,6 +1319,7 @@ async function bootstrap() {
   } catch (error) {
     console.error("Initial load failed", error);
     showFormFeedback("Unable to load initial data", "error");
+    enableDemoMode(error);
   }
 
   setInterval(() => {
