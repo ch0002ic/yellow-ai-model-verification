@@ -229,14 +229,26 @@ export class ApiServer {
       sendUpdate(payload);
     });
 
-    const keepAlive = setInterval(() => {
-      res.write(":keep-alive\n\n");
+    const heartbeat = setInterval(() => {
+      if (!res.writable || res.writableEnded) {
+        return;
+      }
+
+      if (this.telemetryCollector) {
+        sendUpdate({
+          type: "heartbeat",
+          occurredAt: new Date().toISOString(),
+          metrics: this.telemetryCollector.snapshot(),
+        });
+      } else {
+        res.write(":keep-alive\n\n");
+      }
     }, 15000);
-    keepAlive.unref?.();
+    heartbeat.unref?.();
 
     const cleanup = () => {
       unsubscribe();
-      clearInterval(keepAlive);
+      clearInterval(heartbeat);
       if (!res.writableEnded) {
         res.end();
       }

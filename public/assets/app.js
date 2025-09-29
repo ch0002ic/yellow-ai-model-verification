@@ -36,6 +36,7 @@ const sparklineEnabled =
   telemetryEventRate instanceof HTMLElement && telemetryEventRateSparkline instanceof SVGElement;
 const telemetryHistory = {
   eventRate: [],
+  samples: [],
 };
 const numberFormatter = new Intl.NumberFormat("en-US");
 
@@ -46,13 +47,13 @@ const EVENT_STREAM_RETRY_MS = 5000;
 const MAX_SPARKLINE_POINTS = 24;
 const SPARKLINE_WIDTH = 100;
 const SPARKLINE_HEIGHT = 24;
+const EVENT_RATE_WINDOW_MS = 60_000;
 
 let currentTimelineChannel = "";
 let eventStream = null;
 let eventStreamRetryTimer = null;
 let eventPollingTimer = null;
 let demoMode = false;
-let lastTelemetrySample = null;
 
 const DEMO_CHANNEL_ID = "0xchannel-demo-001";
 const DEMO_BALANCE_ID = "demo-balance-001";
@@ -244,7 +245,7 @@ function setTimestampMetric(element, value) {
 
 function resetEventRateTrend() {
   telemetryHistory.eventRate = [];
-  lastTelemetrySample = null;
+  telemetryHistory.samples = [];
 
   if (telemetryEventRate instanceof HTMLElement) {
     telemetryEventRate.textContent = "–";
@@ -270,23 +271,39 @@ function updateEventRateTrend(snapshot) {
     return;
   }
 
-  if (!lastTelemetrySample) {
-    lastTelemetrySample = { total, timestamp };
+  telemetryHistory.samples.push({ timestamp, total });
+  if (telemetryHistory.samples.length > MAX_SPARKLINE_POINTS + 1) {
+    telemetryHistory.samples.shift();
+  }
+
+  if (telemetryHistory.samples.length < 2) {
     renderEventRateTrend(null);
     return;
   }
 
-  const elapsedMs = timestamp - lastTelemetrySample.timestamp;
-  const delta = total - lastTelemetrySample.total;
+  const windowStart = timestamp - EVENT_RATE_WINDOW_MS;
+  let baseline = null;
 
-  lastTelemetrySample = { total, timestamp };
+  for (let index = telemetryHistory.samples.length - 2; index >= 0; index -= 1) {
+    const candidate = telemetryHistory.samples[index];
+    baseline = candidate;
+    if (candidate.timestamp <= windowStart) {
+      break;
+    }
+  }
 
+  if (!baseline) {
+    renderEventRateTrend(null);
+    return;
+  }
+
+  const elapsedMs = timestamp - baseline.timestamp;
   if (elapsedMs <= 0) {
     renderEventRateTrend(null);
     return;
   }
 
-  const safeDelta = Math.max(0, delta);
+  const safeDelta = Math.max(0, total - baseline.total);
   const ratePerMinute = (safeDelta / elapsedMs) * 60_000;
 
   if (!Number.isFinite(ratePerMinute)) {
@@ -1152,24 +1169,30 @@ function handleEventStreamPayload(payload) {
     return;
   }
 
+  if (payload.metrics) {
+    renderTelemetry(payload.metrics);
+  }
+
   const snapshot = payload.snapshot;
   if (!snapshot) {
     return;
   }
 
   renderEvents(snapshot);
-  if (payload.metrics) {
-    renderTelemetry(payload.metrics);
-  }
 
   if (!channelTimelineSelect || !channelTimelineSelect.value) {
     return;
   }
 
   const selectedChannel = channelTimelineSelect.value;
-  if (payload.type === "channel" && payload.channelId === selectedChannel) {
-    void loadChannelTimeline(selectedChannel, { force: true });
+  if (payload.type === "channel") {
+    if (payload.channelId === selectedChannel) {
+      void loadChannelTimeline(selectedChannel, { force: true });
+    }
+    return;
   }
+
+  void loadChannelTimeline(selectedChannel, { force: true });
 }
 
 function startEventStream() {
