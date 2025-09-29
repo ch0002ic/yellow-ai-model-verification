@@ -272,8 +272,16 @@ function updateEventRateTrend(snapshot) {
   }
 
   telemetryHistory.samples.push({ timestamp, total });
+  const windowStart = timestamp - EVENT_RATE_WINDOW_MS;
+  telemetryHistory.samples = telemetryHistory.samples.filter((sample, index, array) => {
+    if (index === array.length - 1) {
+      return true;
+    }
+    return sample.timestamp >= windowStart;
+  });
+
   if (telemetryHistory.samples.length > MAX_SPARKLINE_POINTS + 1) {
-    telemetryHistory.samples.shift();
+    telemetryHistory.samples.splice(0, telemetryHistory.samples.length - (MAX_SPARKLINE_POINTS + 1));
   }
 
   if (telemetryHistory.samples.length < 2) {
@@ -281,29 +289,15 @@ function updateEventRateTrend(snapshot) {
     return;
   }
 
-  const windowStart = timestamp - EVENT_RATE_WINDOW_MS;
-  let baseline = null;
-
-  for (let index = telemetryHistory.samples.length - 2; index >= 0; index -= 1) {
-    const candidate = telemetryHistory.samples[index];
-    baseline = candidate;
-    if (candidate.timestamp <= windowStart) {
-      break;
-    }
-  }
-
-  if (!baseline) {
-    renderEventRateTrend(null);
-    return;
-  }
-
-  const elapsedMs = timestamp - baseline.timestamp;
+  const baseline = telemetryHistory.samples[0];
+  const latest = telemetryHistory.samples[telemetryHistory.samples.length - 1];
+  const elapsedMs = latest.timestamp - baseline.timestamp;
   if (elapsedMs <= 0) {
     renderEventRateTrend(null);
     return;
   }
 
-  const safeDelta = Math.max(0, total - baseline.total);
+  const safeDelta = Math.max(0, latest.total - baseline.total);
   const ratePerMinute = (safeDelta / elapsedMs) * 60_000;
 
   if (!Number.isFinite(ratePerMinute)) {
