@@ -162,11 +162,12 @@ const getAuthDomain = () => ({
 
 ## Next Steps
 
-1. Implement real cryptographic verification primitives (ZK proofs, signature checks).
-2. Layer in ClearNode WebSocket streaming so the backend can react to mid-session state updates and disputes in real time.
-3. Extend the verification engine with policy enforcement (bias, drift, anomaly detection).
-4. Add persistence (SQL/NoSQL) for audit trails and dashboards.
-5. Implement the companion frontend that consumes the REST API and visualises verification proofs in real time.
+1. Wire up the event-rate sparkline to the backend SSE (or add smoothing) so the trendline mirrors real traffic in production, not just the demo fallback.
+2. Implement real cryptographic verification primitives (ZK proofs, signature checks).
+3. Layer in ClearNode WebSocket streaming so the backend can react to mid-session state updates and disputes in real time.
+4. Extend the verification engine with policy enforcement (bias, drift, anomaly detection).
+5. Add persistence (SQL/NoSQL) for audit trails and dashboards.
+6. Implement the companion frontend that consumes the REST API and visualises verification proofs in real time.
 
 ## Hackathon Deliverables Alignment
 
